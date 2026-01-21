@@ -1,0 +1,19 @@
+# Binaries
+cloud-guard
+server
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

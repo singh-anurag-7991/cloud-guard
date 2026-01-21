@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Guard Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0052a3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #fafafa;
+        }
+
+        .risk-HIGH {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .risk-MEDIUM {
+            color: #f57c00;
+            font-weight: bold;
+        }
+
+        .risk-LOW {
+            color: #fbc02d;
+            font-weight: bold;
+        }
+
+        .risk-INFO {
+            color: #388e3c;
+            font-weight: bold;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>☁️ Cloud Guard</h1>
+
+        {{if .Error}}
+        <div
+            style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ef5350;">
+            <strong>⚠️ Error:</strong> {{.Error}}
+        </div>
+        {{end}}
+
+        {{if .Success}}
+        <div
+            style="background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #66bb6a;">
+            <strong>✅ Success:</strong> {{.Success}}
+        </div>
+        {{end}}
+
+        <div class="form-group">
+            <h2>Connect AWS Account</h2>
+            <form action="/connect" method="POST">
+                <input type="text" name="role_arn" placeholder="arn:aws:iam::123456789012:role/CloudGuardRole" required>
+                <button type="submit">Connect</button>
+            </form>
+            <p><small>Create a Role with ReadOnlyAccess and Trust Policy allowing this SaaS.</small></p>
+        </div>
+
+        <div class="form-group">
+            <h2>Actions</h2>
+            <form action="/scan" method="POST" style="display:inline;">
+                <button type="submit">Run Manual Scan</button>
+            </form>
+        </div>
+
+        <h2>Recent Findings</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Risk</th>
+                    <th>Resource</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Findings}}
+                <tr>
+                    <td class="risk-{{.RiskLevel}}">{{.RiskLevel}}</td>
+                    <td>{{.ResourceID}}</td>
+                    <td>{{.ResourceType}}</td>
+                    <td>{{.Description}}<br><small>{{.Recommendation}}</small></td>
+                    <td>{{.GeneratedAt.Format "Jan 02 15:04"}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5">No findings yet. Connect an account and run a scan.</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
