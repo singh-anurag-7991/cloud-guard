@@ -1,166 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Guard Dashboard</title>
+    <title>Cloud Guard — Security & Cost Optimization Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js & HTMX -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --border-color: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item.active a, .nav-item a:hover {
+            background-color: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active a {
+            color: var(--accent-blue);
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        .header {
+            height: 64px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tenant-badge {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-scan:hover {
+            opacity: 0.9;
         }
 
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
         }
 
-        h1,
-        h2 {
-            color: #333;
+        /* Stat Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             padding: 20px;
-            background: #f9fafb;
-            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
-        button {
-            padding: 10px 20px;
-            background: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
         }
 
-        button:hover {
-            background: #0052a3;
+        .stat-meta {
+            font-size: 0.75rem;
+            color: var(--accent-green);
+        }
+
+        .stat-card.red .stat-value { color: var(--accent-red); }
+        .stat-card.green .stat-value { color: var(--accent-green); }
+
+        /* Onboarding Banner */
+        .onboarding-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .onboarding-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .onboarding-info p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .onboarding-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-cf {
+            background: #ff9900;
+            color: #111;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Charts & Section */
+        .chart-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .chart-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        /* Findings Table */
+        .table-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th,
-        td {
             text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
         }
 
         th {
-            background: #fafafa;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
         }
 
-        .risk-HIGH {
-            color: #d32f2f;
-            font-weight: bold;
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.88rem;
         }
 
-        .risk-MEDIUM {
-            color: #f57c00;
-            font-weight: bold;
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
         }
 
-        .risk-LOW {
-            color: #fbc02d;
-            font-weight: bold;
-        }
+        .badge-HIGH { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .badge-MEDIUM { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+        .badge-LOW { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .badge-INFO { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
 
-        .risk-INFO {
-            color: #388e3c;
-            font-weight: bold;
+        .alert-banner {
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 0.88rem;
         }
-
-        pre {
-            white-space: pre-wrap;
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 4px;
-        }
+        .alert-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
+        .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); color: var(--accent-red); }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>☁️ Cloud Guard</h1>
-
-        {{if .Error}}
-        <div
-            style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ef5350;">
-            <strong>⚠️ Error:</strong> {{.Error}}
-        </div>
-        {{end}}
-
-        {{if .Success}}
-        <div
-            style="background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #66bb6a;">
-            <strong>✅ Success:</strong> {{.Success}}
-        </div>
-        {{end}}
-
-        <div class="form-group">
-            <h2>Connect AWS Account</h2>
-            <form action="/connect" method="POST">
-                <input type="text" name="role_arn" placeholder="arn:aws:iam::123456789012:role/CloudGuardRole" required>
-                <button type="submit">Connect</button>
-            </form>
-            <p><small>Create a Role with ReadOnlyAccess and Trust Policy allowing this SaaS.</small></p>
-        </div>
-
-        <div class="form-group">
-            <h2>Actions</h2>
-            <form action="/scan" method="POST" style="display:inline;">
-                <button type="submit">Run Manual Scan</button>
-            </form>
-        </div>
-
-        <h2>Recent Findings</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Risk</th>
-                    <th>Resource</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .Findings}}
-                <tr>
-                    <td class="risk-{{.RiskLevel}}">{{.RiskLevel}}</td>
-                    <td>{{.ResourceID}}</td>
-                    <td>{{.ResourceType}}</td>
-                    <td>{{.Description}}<br><small>{{.Recommendation}}</small></td>
-                    <td>{{.GeneratedAt.Format "Jan 02 15:04"}}</td>
-                </tr>
-                {{else}}
-                <tr>
-                    <td colspan="5">No findings yet. Connect an account and run a scan.</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="/" class="logo">
+            <div class="logo-icon">🛡️</div>
+            Cloud Guard
+        </a>
+        <ul class="nav-list">
+            <li class="nav-item active"><a href="/">📊 Dashboard</a></li>
+            <li class="nav-item"><a href="#findings">🔍 Findings</a></li>
+            <li class="nav-item"><a href="#accounts">☁️ AWS Accounts</a></li>
+            <li class="nav-item"><a href="#onboarding">🚀 Onboarding</a></li>
+        </ul>
     </div>
-</body>
 
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+        <!-- Header -->
+        <div class="header">
+            <span class="tenant-badge">Tenant: {{.TenantID}}</span>
+            <div class="header-actions">
+                <form action="/scan" method="POST">
+                    <button type="submit" class="btn-scan">⚡ Run Scan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Container -->
+        <div class="container">
+            {{if .Success}}
+            <div class="alert-banner alert-success">✅ {{.Success}}</div>
+            {{end}}
+            {{if .Error}}
+            <div class="alert-banner alert-error">⚠️ {{.Error}}</div>
+            {{end}}
+
+            <!-- Stat Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-title">Total Findings</span>
+                    <span class="stat-value">{{.TotalFindings}}</span>
+                    <span class="stat-meta">Active issues detected</span>
+                </div>
+                <div class="stat-card red">
+                    <span class="stat-title">Critical / High Risk</span>
+                    <span class="stat-value">{{.HighCount}}</span>
+                    <span class="stat-meta">Requires immediate action</span>
+                </div>
+                <div class="stat-card green">
+                    <span class="stat-title">Est. Monthly Savings</span>
+                    <span class="stat-value">{{.EstimatedSavings}}</span>
+                    <span class="stat-meta">From idle & stopped resources</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Connected Accounts</span>
+                    <span class="stat-value">{{.AccountsCount}}</span>
+                    <span class="stat-meta">AWS accounts monitored</span>
+                </div>
+            </div>
+
+            <!-- AWS Onboarding Card -->
+            <div class="onboarding-card" id="onboarding">
+                <div class="onboarding-info">
+                    <h3>🚀 Connect AWS Account (2 Easy Options)</h3>
+                    <p>Option A: Click 1-Click AWS Launch to create the role automatically. <br>Option B: Download the YAML file and upload it in AWS CloudFormation UI ("Upload a template file").</p>
+                </div>
+                <div class="onboarding-btns">
+                    <a href="{{.CloudFormationURL}}" target="_blank" class="btn-cf" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
+                        ☁️ 1-Click AWS Launch
+                    </a>
+                    <a href="/cloudformation.yaml" download="cloudformation.yaml" class="btn-cf">
+                        📥 Download Template YAML
+                    </a>
+                </div>
+            </div>
+
+            <!-- Manual Account Connect Form -->
+            <div class="table-card" id="accounts">
+                <div class="table-header">
+                    <h3>Connect Account (Manual Role ARN)</h3>
+                </div>
+                <form action="/connect" method="POST" style="display:flex; gap:12px;">
+                    <input type="text" name="role_arn" placeholder="arn:aws:iam::123456789012:role/CloudGuardRole" required style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-dark); color:white;">
+                    <button type="submit" class="btn-scan">Connect Role</button>
+                </form>
+            </div>
+
+            <!-- Cost Trend Chart -->
+            <div class="chart-container">
+                <div class="chart-header">📈 AWS Spending & Resource Finding Overview</div>
+                <canvas id="findingsChart" height="80"></canvas>
+            </div>
+
+            <!-- Findings Table -->
+            <div class="table-card" id="findings">
+                <div class="table-header">
+                    <h3>Active Findings & Recommendations</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Resource ID</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Recommendation</th>
+                            <th>Detected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Findings}}
+                        <tr>
+                            <td><span class="badge badge-{{.RiskLevel}}">{{.RiskLevel}}</span></td>
+                            <td><code>{{.ResourceID}}</code></td>
+                            <td>{{.ResourceType}}</td>
+                            <td>{{.Description}}</td>
+                            <td style="color:var(--text-secondary);">{{.Recommendation}}</td>
+                            <td style="color:var(--text-secondary);">{{.GeneratedAt.Format "Jan 02 15:04"}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:var(--text-secondary); padding:32px;">
+                                ✨ No security or cost findings! Connect an account and run a scan.
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Render Chart -->
+    <script>
+        const ctx = document.getElementById('findingsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['High Risk', 'Medium Risk', 'Low Risk', 'Info / Cost'],
+                datasets: [{
+                    label: 'Findings Count',
+                    data: [{{.HighCount}}, {{.MediumCount}}, {{.LowCount}}, {{.InfoCount}}],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(16, 185, 129, 0.7)'
+                    ],
+                    borderColor: [
+                        '#ef4444',
+                        '#f59e0b',
+                        '#3b82f6',
+                        '#10b981'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
 </html>

@@ -38,7 +38,11 @@ func New(db *storage.DB, slack *alerting.SlackWrapper) *Orchestrator {
 }
 
 func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN string) error {
-	log.Printf("Starting scan for account %s...", roleARN)
+	return o.RunScanForTenant(ctx, "default", accountID, roleARN)
+}
+
+func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, accountID int64, roleARN string) error {
+	log.Printf("[Tenant: %s] Starting scan for account %s...", tenantID, roleARN)
 
 	// 1. Create AWS Client
 	client, err := aws.NewClient(ctx, roleARN)
@@ -57,6 +61,9 @@ func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN str
 
 	// EC2
 	if res, err := ec2Scan.Scan(ctx); err == nil {
+		for i := range res {
+			res[i].TenantID = tenantID
+		}
 		allResources = append(allResources, res...)
 	} else {
 		log.Printf("EC2 Scan failed: %v", err)
@@ -64,6 +71,9 @@ func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN str
 
 	// S3
 	if res, err := s3Scan.Scan(ctx); err == nil {
+		for i := range res {
+			res[i].TenantID = tenantID
+		}
 		allResources = append(allResources, res...)
 	} else {
 		log.Printf("S3 Scan failed: %v", err)
@@ -71,6 +81,9 @@ func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN str
 
 	// RDS
 	if res, err := rdsScan.Scan(ctx); err == nil {
+		for i := range res {
+			res[i].TenantID = tenantID
+		}
 		allResources = append(allResources, res...)
 	} else {
 		log.Printf("RDS Scan failed: %v", err)
@@ -78,6 +91,9 @@ func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN str
 
 	// Cost
 	if res, err := costScan.Scan(ctx); err == nil {
+		for i := range res {
+			res[i].TenantID = tenantID
+		}
 		allResources = append(allResources, res...)
 	} else {
 		log.Printf("Cost Scan failed: %v", err)
@@ -85,14 +101,18 @@ func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN str
 
 	// 4. Evaluate Rules
 	findings := o.Engine.Evaluate(allResources)
-	log.Printf("Scan complete. Found %d issues.", len(findings))
+	for i := range findings {
+		findings[i].TenantID = tenantID
+		findings[i].AccountID = fmt.Sprintf("%d", accountID)
+	}
+	log.Printf("[Tenant: %s] Scan complete. Found %d issues.", tenantID, len(findings))
 
 	// 5. Persist
-	scanID, err := o.DB.CreateScan(accountID)
+	scanID, err := o.DB.CreateScanForTenant(tenantID, accountID)
 	if err != nil {
 		return err
 	}
-	if err := o.DB.SaveFindings(scanID, findings); err != nil {
+	if err := o.DB.SaveFindingsForTenant(scanID, tenantID, findings); err != nil {
 		log.Printf("Failed to save findings: %v", err)
 	}
 
@@ -121,14 +141,38 @@ func (o *Orchestrator) ScanAll(ctx context.Context) error {
 
 	var errs []error
 	for _, acc := range accounts {
-		if err := o.RunScan(ctx, acc.ID, acc.RoleARN); err != nil {
-			log.Printf("Failed to scan account %s: %v", acc.RoleARN, err)
+		if err := o.RunScanForTenant(ctx, acc.TenantID, acc.ID, acc.RoleARN); err != nil {
+			log.Printf("Failed to scan account %s for tenant %s: %v", acc.RoleARN, acc.TenantID, err)
 			errs = append(errs, err)
 		}
 	}
 
 	if len(errs) > 0 {
 		return fmt.Errorf("encountered %d errors during scan (check logs)", len(errs))
+	}
+	return nil
+}
+
+func (o *Orchestrator) ScanAllForTenant(ctx context.Context, tenantID string) error {
+	accounts, err := o.DB.ListAccountsByTenant(tenantID)
+	if err != nil {
+		return err
+	}
+
+	if len(accounts) == 0 {
+		return fmt.Errorf("no accounts connected for tenant: %s", tenantID)
+	}
+
+	var errs []error
+	for _, acc := range accounts {
+		if err := o.RunScanForTenant(ctx, tenantID, acc.ID, acc.RoleARN); err != nil {
+			log.Printf("Failed to scan account %s for tenant %s: %v", acc.RoleARN, tenantID, err)
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("encountered %d errors during scan for tenant %s", len(errs), tenantID)
 	}
 	return nil
 }

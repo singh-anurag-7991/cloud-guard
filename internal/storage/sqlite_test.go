@@ -64,3 +64,71 @@ func TestDB(t *testing.T) {
 		t.Errorf("Got finding resource %s, want %s", findings[0].ResourceID, f.ResourceID)
 	}
 }
+
+func TestMultiTenantIsolation(t *testing.T) {
+	tmpFile := "test_multitenant.db"
+	db, err := InitDB(tmpFile)
+	if err != nil {
+		t.Fatalf("InitDB failed: %v", err)
+	}
+	defer db.Close()
+	defer os.Remove(tmpFile)
+
+	tenantA := "tenant-alpha"
+	tenantB := "tenant-beta"
+
+	// Add accounts for Tenant A and Tenant B
+	accA, err := db.AddAccountForTenant(tenantA, "arn:aws:iam::111:role/Alpha")
+	if err != nil {
+		t.Fatalf("AddAccountForTenant A failed: %v", err)
+	}
+
+	accB, err := db.AddAccountForTenant(tenantB, "arn:aws:iam::222:role/Beta")
+	if err != nil {
+		t.Fatalf("AddAccountForTenant B failed: %v", err)
+	}
+
+	// Verify account isolation
+	accountsA, err := db.ListAccountsByTenant(tenantA)
+	if err != nil || len(accountsA) != 1 {
+		t.Fatalf("Expected 1 account for tenantA, got %d (err: %v)", len(accountsA), err)
+	}
+	if accountsA[0].RoleARN != "arn:aws:iam::111:role/Alpha" {
+		t.Errorf("Unexpected ARN for tenantA: %s", accountsA[0].RoleARN)
+	}
+
+	accountsB, err := db.ListAccountsByTenant(tenantB)
+	if err != nil || len(accountsB) != 1 {
+		t.Fatalf("Expected 1 account for tenantB, got %d (err: %v)", len(accountsB), err)
+	}
+
+	// Save findings for Tenant A
+	scanA, _ := db.CreateScanForTenant(tenantA, accA)
+	db.SaveFindingsForTenant(scanA, tenantA, []models.Finding{
+		{TenantID: tenantA, ResourceID: "bucket-alpha", ResourceType: models.TypeS3, RiskLevel: "HIGH", GeneratedAt: time.Now()},
+	})
+
+	// Save findings for Tenant B
+	scanB, _ := db.CreateScanForTenant(tenantB, accB)
+	db.SaveFindingsForTenant(scanB, tenantB, []models.Finding{
+		{TenantID: tenantB, ResourceID: "instance-beta", ResourceType: models.TypeEC2, RiskLevel: "LOW", GeneratedAt: time.Now()},
+	})
+
+	// Verify Tenant A only sees Tenant A's findings
+	findingsA, err := db.GetLatestFindingsByTenant(tenantA)
+	if err != nil || len(findingsA) != 1 {
+		t.Fatalf("Expected 1 finding for tenantA, got %d (err: %v)", len(findingsA), err)
+	}
+	if findingsA[0].ResourceID != "bucket-alpha" {
+		t.Errorf("TenantA received wrong finding: %s", findingsA[0].ResourceID)
+	}
+
+	// Verify Tenant B only sees Tenant B's findings
+	findingsB, err := db.GetLatestFindingsByTenant(tenantB)
+	if err != nil || len(findingsB) != 1 {
+		t.Fatalf("Expected 1 finding for tenantB, got %d (err: %v)", len(findingsB), err)
+	}
+	if findingsB[0].ResourceID != "instance-beta" {
+		t.Errorf("TenantB received wrong finding: %s", findingsB[0].ResourceID)
+	}
+}

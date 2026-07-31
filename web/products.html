@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guard Platform | Products</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050a12;
+            --bg-card: #0c1624;
+            --bg-card-hover: #12223a;
+            --border-color: #1a2940;
+            --border-glow: #00ffd540;
+            --text-primary: #e8edf5;
+            --text-secondary: #7a8ba3;
+            --accent-cyan: #00ffd5;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a78bfa;
+            --accent-blue: #3b82f6;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Particles animation for hero */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(var(--border-glow) 1px, transparent 1px),
+                radial-gradient(var(--border-glow) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            opacity: 0.1;
+            animation: moveParticles 20s linear infinite;
+        }
+
+        @keyframes moveParticles {
+            0% { background-position: 0 0, 25px 25px; }
+            100% { background-position: 50px 50px, 75px 75px; }
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            z-index: 1000;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid transparent;
+        }
+
+        .navbar.scrolled {
+            background-color: rgba(5, 10, 18, 0.9);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background-color: transparent;
+            color: var(--accent-cyan) !important;
+            border: 1px solid var(--accent-cyan);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background-color: rgba(0, 255, 213, 0.1);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .btn-amber { color: var(--accent-amber) !important; border-color: var(--accent-amber); }
+        .btn-amber:hover { background-color: rgba(245, 158, 11, 0.1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+
+        .btn-purple { color: var(--accent-purple) !important; border-color: var(--accent-purple); }
+        .btn-purple:hover { background-color: rgba(167, 139, 250, 0.1); box-shadow: 0 0 15px rgba(167, 139, 250, 0.4); }
+
+
+        /* Scroll Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 { margin-bottom: 1rem; }
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #7a8ba3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+        .section-title { font-size: 2.2rem; font-weight: 800; }
+        .subtitle { font-size: 1.2rem; color: var(--text-secondary); max-width: 800px; margin: 0 auto 2rem; }
+
+        /* Sections */
+        section { padding: 6rem 5%; position: relative; }
+        .hero { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; margin-top: 4rem; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+        .badge.cyan { color: var(--accent-cyan); border-color: rgba(0, 255, 213, 0.3); }
+        .badge.amber { color: var(--accent-amber); border-color: rgba(245, 158, 11, 0.3); }
+        .badge.purple { color: var(--accent-purple); border-color: rgba(167, 139, 250, 0.3); }
+
+        .product-section {
+            border-top: 1px solid var(--border-color);
+            background: radial-gradient(circle at center top, var(--bg-card) 0%, var(--bg-dark) 100%);
+        }
+
+        /* Grids and Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            background-color: var(--bg-card-hover);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .card.cyan:hover { border-color: var(--accent-cyan); box-shadow: 0 4px 20px var(--border-glow); }
+        .card.amber:hover { border-color: var(--accent-amber); }
+        .card.purple:hover { border-color: var(--accent-purple); }
+
+        .card h3 { color: var(--text-primary); font-size: 1.25rem; }
+        .card p { color: var(--text-secondary); font-size: 0.95rem; }
+
+        /* Code Blocks */
+        pre {
+            background-color: #03060a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #a78bfa;
+            margin: 2rem 0;
+            transition: var(--transition);
+        }
+        pre:hover {
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.2);
+        }
+        pre.cyan { color: var(--accent-cyan); }
+        pre.cyan:hover { border-color: rgba(0, 255, 213, 0.5); box-shadow: 0 0 15px var(--border-glow); }
+
+        /* Comparison Table */
+        .table-container { overflow-x: auto; margin-top: 3rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { background-color: rgba(255,255,255,0.02); font-weight: 600; color: var(--text-primary); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: var(--bg-card-hover); }
+        
+        .check { color: var(--accent-green); font-weight: bold; }
+        .cross { color: var(--text-secondary); }
+
+        /* CTA Section */
+        .cta-section { text-align: center; padding: 6rem 5%; border-top: 1px solid var(--border-color); }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border-color);
+            padding: 4rem 5% 2rem;
+            background-color: var(--bg-card);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand { color: var(--text-secondary); }
+        .footer-brand strong { color: var(--text-primary); display: block; margin-bottom: 1rem; font-size: 1.2rem; }
+
+        .footer-links h4 { color: var(--text-primary); margin-bottom: 1rem; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 0.5rem; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; transition: var(--transition); }
+        .footer-links a:hover { color: var(--accent-cyan); }
+
+        .footer-bottom {
+            text-align: center;
+            color: var(--text-secondary);
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar" id="navbar">
+        <a href="/" class="brand"><div class="brand-icon">🛡️</div> Guard Platform</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/products" class="active">Products</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/dashboard" class="btn-primary">Launch App →</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div id="particles"></div>
+        <div class="reveal">
+            <h1 class="hero-title">Platform Solutions</h1>
+            <p class="subtitle">Enterprise-grade security scanning, cost optimization, and API protection tools — built with Go for maximum throughput.</p>
+        </div>
+    </section>
+
+    <!-- Cloud Guard -->
+    <section class="product-section">
+        <div class="reveal">
+            <div class="badge cyan">🟢 AVAILABLE NOW</div>
+            <h2 class="section-title">Cloud Guard — AWS Security & Cost Scanner</h2>
+            <p class="subtitle" style="margin-left: 0; text-align: left;">
+                Multi-tenant SaaS architecture designed to secure and optimize your AWS environment. 
+                Zero long-term credentials required using secure STS AssumeRole onboarding via CloudFormation.
+            </p>
+            
+            <div class="feature-grid">
+                <div class="card cyan">
+                    <h3>EC2 Instance Auditor</h3>
+                    <p>Detects stopped, idle, and over-provisioned instances to eliminate wasted spend.</p>
+                </div>
+                <div class="card cyan">
+                    <h3>S3 Security Scanner</h3>
+                    <p>Public access detection, bucket policy analysis, and comprehensive ACL auditing.</p>
+                </div>
+                <div class="card cyan">
+                    <h3>RDS Optimizer</h3>
+                    <p>Identifies over-provisioned databases and unused read replicas in real-time.</p>
+                </div>
+                <div class="card cyan">
+                    <h3>Cost Explorer</h3>
+                    <p>Real-time cost tracking, savings recommendations, and intelligent budget alerts.</p>
+                </div>
+                <div class="card cyan">
+                    <h3>Slack Integration</h3>
+                    <p>Real-time alerts, weekly summary reports, and configurable custom thresholds.</p>
+                </div>
+                <div class="card cyan">
+                    <h3>1-Click Onboarding</h3>
+                    <p>Deploy a CloudFormation stack for STS AssumeRole to onboard without static keys.</p>
+                </div>
+            </div>
+
+            <pre class="cyan">
+Client → Guard API → STS AssumeRole → Target AWS Account
+     ↓
+[EC2] [S3] [RDS] [Cost Explorer] [IAM]
+     ↓
+Findings → SQLite → Dashboard + Slack Alerts
+            </pre>
+            
+            <div style="margin-top: 2rem;">
+                <a href="/dashboard" class="btn-primary" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">Launch Cloud Guard</a>
+                <span style="color: var(--text-secondary); margin-left: 1rem;">Starting at $99/mo</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Guard -->
+    <section class="product-section">
+        <div class="reveal">
+            <div class="badge amber">🟡 COMING SOON</div>
+            <h2 class="section-title">Data Guard — GCP Security & Cost Scanner</h2>
+            <p class="subtitle" style="margin-left: 0; text-align: left;">
+                Unified security and cost scanning extending our capabilities to Google Cloud Platform infrastructure.
+            </p>
+            
+            <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="card amber">
+                    <h3>BigQuery Auditor</h3>
+                    <p>BigQuery slot & query cost tracking.</p>
+                </div>
+                <div class="card amber">
+                    <h3>GCS Scanner</h3>
+                    <p>Google Cloud Storage Bucket Permission Scanner.</p>
+                </div>
+                <div class="card amber">
+                    <h3>IAM Detector</h3>
+                    <p>GCP IAM Over-privileged Service Account Detector.</p>
+                </div>
+                <div class="card amber">
+                    <h3>Compute Optimizer</h3>
+                    <p>Compute Engine Instance Right-sizing.</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 3rem;">
+                <a href="https://github.com/singh-anurag-7991/data-guard" class="btn-primary btn-amber" target="_blank">Star on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Shield -->
+    <section class="product-section">
+        <div class="reveal">
+            <div class="badge purple">🟣 OPEN SOURCE</div>
+            <h2 class="section-title">Shield — High-Performance Rate Limiter & DDoS Engine</h2>
+            <p class="subtitle" style="margin-left: 0; text-align: left;">
+                A distributed Go middleware providing sub-millisecond enforcement and DDoS defense with automatic IP reputation scoring.
+            </p>
+            
+            <div class="feature-grid">
+                <div class="card purple">
+                    <h3>Go HTTP Middleware</h3>
+                    <p>Drop-in middleware compatible with any Go standard HTTP server.</p>
+                </div>
+                <div class="card purple">
+                    <h3>Multiple Algorithms</h3>
+                    <p>Configurable algorithms including sliding window, token bucket, and fixed window.</p>
+                </div>
+                <div class="card purple">
+                    <h3>Flexible Backends</h3>
+                    <p>Choose between fast in-memory for single instance or Redis for distributed setups.</p>
+                </div>
+                <div class="card purple">
+                    <h3>Sub-millisecond Latency</h3>
+                    <p>Highly optimized, benchmarked at <0.1ms per request evaluation.</p>
+                </div>
+                <div class="card purple">
+                    <h3>DDoS Protection</h3>
+                    <p>Distributed defense system with automatic IP reputation scoring and ban features.</p>
+                </div>
+            </div>
+
+            <pre>
+limiter := shield.NewRateLimiter(
+    shield.WithAlgorithm(shield.SlidingWindow),
+    shield.WithRate(1000, time.Minute),
+    shield.WithBackend(shield.Redis(redisClient)),
+)
+http.Handle("/api/", limiter.Middleware(apiHandler))
+            </pre>
+
+            <div style="margin-top: 2rem;">
+                <a href="https://github.com/singh-anurag-7991/shield" class="btn-primary btn-purple" target="_blank">View Source Code</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="product-section">
+        <div class="reveal">
+            <h2 class="section-title" style="text-align: center;">Product Comparison</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Cloud Guard</th>
+                            <th>Data Guard</th>
+                            <th>Shield</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cloud Provider</td>
+                            <td>AWS</td>
+                            <td>GCP</td>
+                            <td>Agnostic</td>
+                        </tr>
+                        <tr>
+                            <td>Status</td>
+                            <td><span class="badge cyan" style="margin:0; font-size:0.75rem;">LIVE</span></td>
+                            <td><span class="badge amber" style="margin:0; font-size:0.75rem;">SOON</span></td>
+                            <td><span class="badge purple" style="margin:0; font-size:0.75rem;">OSS</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pricing</td>
+                            <td>From $99/mo</td>
+                            <td>TBD</td>
+                            <td>Free</td>
+                        </tr>
+                        <tr>
+                            <td>Language</td>
+                            <td>Go / Vue</td>
+                            <td>Go / Vue</td>
+                            <td>Go</td>
+                        </tr>
+                        <tr>
+                            <td>Deployment</td>
+                            <td>SaaS</td>
+                            <td>SaaS</td>
+                            <td>Self-hosted / SDK</td>
+                        </tr>
+                        <tr>
+                            <td>Key Feature</td>
+                            <td>Cost & Security Audits</td>
+                            <td>Unified GCP Scanning</td>
+                            <td>Rate Limiting</td>
+                        </tr>
+                        <tr>
+                            <td>GitHub</td>
+                            <td>Private</td>
+                            <td><a href="https://github.com/singh-anurag-7991/data-guard" style="color:var(--accent-amber)">Repository</a></td>
+                            <td><a href="https://github.com/singh-anurag-7991/shield" style="color:var(--accent-purple)">Repository</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="reveal">
+            <h2 class="section-title">Ready to get started?</h2>
+            <p class="subtitle" style="margin: 1rem auto 2rem;">Join enterprises securing their cloud infrastructure with Guard Platform.</p>
+            <a href="/dashboard" class="btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;">Launch App →</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <strong>🛡️ Guard Platform</strong>
+                Enterprise cloud security and infrastructure optimization tools.
+            </div>
+            <div class="footer-links">
+                <h4>Products</h4>
+                <ul>
+                    <li><a href="/products">Cloud Guard</a></li>
+                    <li><a href="/products">Data Guard</a></li>
+                    <li><a href="/products">Shield</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">API Reference</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Guard Platform. Engineered by Anurag Singh.
+        </div>
+    </footer>
+
+    <script>
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Scroll Reveal Animation
+        const reveals = document.querySelectorAll('.reveal');
+        
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            const elementVisible = 100;
+            
+            reveals.forEach(reveal => {
+                const elementTop = reveal.getBoundingClientRect().top;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveal.classList.add('active');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealOnScroll);
+        
+        // Initial check
+        revealOnScroll();
+    </script>
+</body>
+</html>

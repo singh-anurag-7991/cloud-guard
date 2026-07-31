@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cloud Guard - Read-Only IAM Role for Automated AWS Cost & Security Audits'
+
+Parameters:
+  ExternalId:
+    Type: String
+    Description: 'Unique External ID provided by Cloud Guard to prevent confused deputy attacks'
+    Default: 'cloud-guard-saas'
+  SaaSAccountID:
+    Type: String
+    Description: 'The AWS Account ID hosting Cloud Guard SaaS'
+    Default: '123456789012' # Will be updated with actual SaaS host AWS Account ID
+
+Resources:
+  CloudGuardReadOnlyRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'CloudGuardReadOnlyRole-${AWS::Region}'
+      Description: 'Read-only access role assumed by Cloud Guard for cost and security analysis'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${SaaSAccountID}:root'
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/ReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/SecurityAudit'
+
+Outputs:
+  RoleARN:
+    Description: 'The IAM Role ARN to paste into Cloud Guard Onboarding'
+    Value: !GetAtt CloudGuardReadOnlyRole.Arn

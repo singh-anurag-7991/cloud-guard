@@ -25,6 +25,10 @@ func NewClient(ctx context.Context, roleARN string) (*Client, error) {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
 
+	if cfg.Region == "" {
+		cfg.Region = "us-east-1"
+	}
+
 	stsClient := sts.NewFromConfig(cfg)
 
 	if roleARN != "" {

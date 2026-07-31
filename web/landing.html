@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guard Platform | Cloud Security Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #050a12;
+      --bg-card: #0c1624;
+      --bg-card-hover: #12223a;
+      --border-color: #1a2940;
+      --border-glow: #00ffd540;
+      --text-primary: #e8edf5;
+      --text-secondary: #7a8ba3;
+      --accent-cyan: #00ffd5;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a78bfa;
+      --accent-blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Scroll Reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease-out;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: transparent;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid transparent;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+    }
+    .navbar.scrolled {
+      background: rgba(5, 10, 18, 0.95);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon { font-size: 1.5rem; }
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 30px;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    .nav-links a:hover {
+      color: var(--accent-cyan);
+    }
+    .btn-primary {
+      background: var(--accent-cyan);
+      color: var(--bg-dark) !important;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 0 15px var(--border-glow);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 25px var(--accent-cyan);
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--accent-cyan) !important;
+      border: 1px solid var(--accent-cyan);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .btn-outline:hover {
+      background: rgba(0, 255, 213, 0.1);
+      box-shadow: 0 0 15px var(--border-glow);
+      transform: translateY(-2px);
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 180px 0 100px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    /* Particle Network Background */
+    .particles {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(0, 255, 213, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.05) 0%, transparent 50%);
+    }
+    .particles::before, .particles::after {
+      content: '';
+      position: absolute;
+      width: 100%; height: 100%;
+      background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px);
+      background-size: 50px 50px;
+      opacity: 0.1;
+      animation: float 20s linear infinite;
+    }
+    .particles::after {
+      background-image: radial-gradient(var(--accent-cyan) 1px, transparent 1px);
+      background-size: 80px 80px;
+      opacity: 0.15;
+      animation: float-reverse 25s linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50px); }
+    }
+    @keyframes float-reverse {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(80px); }
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .hero-content h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(to right, #ffffff, #8a9bb2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-content p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      max-width: 500px;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Terminal */
+    .terminal-container {
+      background: #000;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px var(--border-glow);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      position: relative;
+      overflow: hidden;
+      height: 340px;
+    }
+    .terminal-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .term-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .term-dot.r { background: #ff5f56; }
+    .term-dot.y { background: #ffbd2e; }
+    .term-dot.g { background: #27c93f; }
+    
+    .terminal-content span { display: block; margin-bottom: 8px; opacity: 0; }
+    .term-cmd { color: var(--text-primary); }
+    .term-info { color: var(--accent-blue); }
+    .term-ok { color: var(--accent-green); }
+    .term-scan { color: var(--accent-cyan); }
+    .term-alert { color: var(--accent-red); }
+    .term-success { color: var(--accent-green); font-weight: bold; margin-top: 15px !important;}
+    
+    /* Stats Bar */
+    .stats-section {
+      padding: 60px 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 30px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      margin-bottom: 10px;
+    }
+    .stat-label {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Sections Shared */
+    .section {
+      padding: 120px 0;
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+    .section-header h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    /* How It Works */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      position: relative;
+    }
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 35px; left: 10%; right: 10%;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--border-color) 0, var(--border-color) 10px, transparent 10px, transparent 20px);
+      z-index: 0;
+    }
+    .step-card {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      background: var(--bg-dark);
+      padding: 0 20px;
+    }
+    .step-num {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-cyan);
+      box-shadow: 0 0 20px var(--border-glow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 0 auto 30px;
+      color: var(--accent-cyan);
+    }
+    .step-card h3 { font-size: 1.5rem; margin-bottom: 15px; }
+    .step-card p { color: var(--text-secondary); }
+
+    /* Product Suite & Pricing Shared Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 40px;
+      transition: all 0.3s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-6px) scale(1.02);
+      background: var(--bg-card-hover);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .card-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      align-self: flex-start;
+    }
+    .badge-live { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-soon { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+    .badge-oss { background: rgba(167, 139, 250, 0.1); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+    .badge-popular { background: rgba(0, 255, 213, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); position: absolute; top: -15px; right: 20px;}
+
+    .card h3 { font-size: 1.8rem; margin-bottom: 15px; }
+    .card-price { font-size: 2.5rem; font-weight: 800; margin-bottom: 25px; }
+    .card-price span { font-size: 1rem; color: var(--text-secondary); font-weight: 400; }
+    
+    .feature-list {
+      list-style: none;
+      margin-bottom: 30px;
+      flex-grow: 1;
+    }
+    .feature-list li {
+      margin-bottom: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .feature-list li::before {
+      content: '✓';
+      color: var(--accent-cyan);
+      font-weight: bold;
+    }
+
+    /* Highlights for specific cards */
+    .card-cloud { border-color: var(--accent-cyan); box-shadow: 0 0 15px var(--border-glow); }
+    .card-cloud:hover { box-shadow: 0 0 30px var(--border-glow); }
+    .card-data:hover { border-color: var(--accent-amber); box-shadow: 0 0 30px rgba(245, 158, 11, 0.2); }
+    .card-shield:hover { border-color: var(--accent-purple); box-shadow: 0 0 30px rgba(167, 139, 250, 0.2); }
+    .card-pro { border-color: var(--accent-cyan); box-shadow: 0 0 15px var(--border-glow); }
+    .card-pro:hover { box-shadow: 0 0 30px var(--border-glow); }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-card) 100%);
+      text-align: center;
+      padding: 100px 20px;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .cta-section h2 { font-size: 3rem; font-weight: 800; margin-bottom: 30px; }
+    .cta-hint { color: var(--text-secondary); margin-top: 20px; font-size: 0.9rem; }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-dark);
+      padding: 80px 40px 40px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto 60px;
+    }
+    .footer-brand { color: var(--text-secondary); }
+    .footer-brand h4 { color: var(--text-primary); font-size: 1.5rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
+    .footer-links h4 { color: var(--text-primary); margin-bottom: 20px; font-size: 1.1rem; }
+    .footer-links ul { list-style: none; }
+    .footer-links li { margin-bottom: 12px; }
+    .footer-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+    .footer-links a:hover { color: var(--accent-cyan); }
+    
+    .footer-bottom {
+      text-align: center;
+      color: var(--text-secondary);
+      padding-top: 40px;
+      border-top: 1px solid var(--border-color);
+    }
+    .footer-bottom a { color: var(--accent-cyan); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .hero-content p { margin: 0 auto 40px; }
+      .hero-btns { justify-content: center; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .steps-grid::before { display: none; }
+      .cards-grid { grid-template-columns: 1fr; max-width: 500px; margin: 0 auto; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero-content h1 { font-size: 3rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .terminal-container { height: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href="/" class="brand"><div class="brand-icon">🛡️</div> Guard Platform</a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="/about">About</a></li>
+      <li><a href="/dashboard" class="btn-primary">Launch App &rarr;</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero reveal">
+    <div class="particles"></div>
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <h1>Cloud Security Intelligence Platform</h1>
+        <p>Identify. Protect. Automate. Secure your AWS infrastructure with automated threat detection, cost optimization, and real-time monitoring.</p>
+        <div class="hero-btns">
+          <a href="/dashboard" class="btn-primary">Get Started Free</a>
+          <a href="#products" class="btn-outline">View Products</a>
+        </div>
+      </div>
+      <div class="terminal-container">
+        <div class="terminal-header">
+          <div class="term-dot r"></div>
+          <div class="term-dot y"></div>
+          <div class="term-dot g"></div>
+        </div>
+        <div class="terminal-content" id="terminal">
+          <span class="term-cmd">$ guard scan --target aws://prod</span>
+          <span class="term-info">[INFO] Initializing Cloud Guard v2.1...</span>
+          <span class="term-ok">[OK] STS AssumeRole: arn:aws:iam::****:role/GuardRole</span>
+          <span class="term-scan">[SCAN] Analyzing 847 resources across 3 regions...</span>
+          <span class="term-alert">[ALERT] 2 S3 buckets with public access detected</span>
+          <span class="term-alert">[ALERT] 4 EC2 instances stopped &gt; 30 days ($620/mo waste)</span>
+          <span class="term-ok">[OK] RDS instances optimally sized</span>
+          <span class="term-ok">[OK] IAM policies compliance: PASSED</span>
+          <span class="term-success">✓ Scan complete: 6 findings | Est. savings: $620/mo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Bar -->
+  <section class="stats-section reveal">
+    <div class="container stats-grid">
+      <div>
+        <div class="stat-val" data-target="847">0</div>
+        <div class="stat-label">Resources Scanned</div>
+      </div>
+      <div>
+        <div class="stat-val" data-prefix="$" data-suffix="M+" data-target="2.4">0</div>
+        <div class="stat-label">Savings Identified</div>
+      </div>
+      <div>
+        <div class="stat-val" data-suffix="%" data-target="99.9">0</div>
+        <div class="stat-label">Uptime SLA</div>
+      </div>
+      <div>
+        <div class="stat-val" data-prefix="<" data-suffix="s" data-target="30">0</div>
+        <div class="stat-label">Scan Duration</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section reveal">
+    <div class="container">
+      <div class="section-header">
+        <h2>How It Works</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Deploy</h3>
+          <p>1-click CloudFormation stack. Read-only IAM role via STS AssumeRole. Zero long-term credentials.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Scan</h3>
+          <p>Automated multi-region scan of EC2, S3, RDS, IAM, and Cost Explorer. Results in under 30 seconds.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Act</h3>
+          <p>Prioritized findings with risk levels, estimated savings, and Slack alerts. Fix issues before they become incidents.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Suite -->
+  <section id="products" class="section reveal">
+    <div class="container">
+      <div class="section-header">
+        <h2>The Guard Platform Suite</h2>
+      </div>
+      <div class="cards-grid">
+        <div class="card card-cloud">
+          <div class="card-badge badge-live">🟢 AVAILABLE NOW</div>
+          <h3>Cloud Guard</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">AWS Infrastructure Security</p>
+          <ul class="feature-list">
+            <li>EC2 stopped/idle instance detection</li>
+            <li>S3 public bucket & policy scanner</li>
+            <li>RDS over-provisioned inspector</li>
+            <li>Cost Explorer integration</li>
+            <li>Slack alerting & reports</li>
+          </ul>
+          <a href="/dashboard" class="btn-primary" style="text-align: center; display: block;">Launch App &rarr;</a>
+        </div>
+        <div class="card card-data">
+          <div class="card-badge badge-soon">🟡 COMING SOON</div>
+          <h3>Data Guard</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">GCP Data Security</p>
+          <ul class="feature-list">
+            <li>BigQuery slot & query cost auditor</li>
+            <li>GCS bucket permission scanner</li>
+            <li>GCP IAM over-privileged detection</li>
+            <li>Unified multi-cloud dashboard</li>
+          </ul>
+          <a href="https://github.com/singh-anurag-7991/data-guard" target="_blank" class="btn-outline" style="text-align: center; display: block;">View on GitHub</a>
+        </div>
+        <div class="card card-shield">
+          <div class="card-badge badge-oss">🟣 OPEN SOURCE</div>
+          <h3>Shield</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">API Defense Engine</p>
+          <ul class="feature-list">
+            <li>High-throughput Go rate limiter</li>
+            <li>Redis & in-memory backends</li>
+            <li>Sliding window & token bucket</li>
+            <li>Sub-millisecond enforcement</li>
+          </ul>
+          <a href="https://github.com/singh-anurag-7991/shield" target="_blank" class="btn-outline" style="text-align: center; display: block;">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="section reveal" style="background: var(--bg-card); border-top: 1px solid var(--border-color);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Simple, Transparent Pricing</h2>
+      </div>
+      <div class="cards-grid">
+        <div class="card" style="background: var(--bg-dark);">
+          <h3>Starter</h3>
+          <div class="card-price">$99<span>/mo</span></div>
+          <ul class="feature-list">
+            <li>1 AWS Account</li>
+            <li>Daily Scans</li>
+            <li>Email Alerts</li>
+            <li>30-day history</li>
+          </ul>
+          <a href="/dashboard" class="btn-outline" style="text-align: center; display: block;">Get Started</a>
+        </div>
+        <div class="card card-pro" style="background: var(--bg-dark);">
+          <div class="card-badge badge-popular">POPULAR</div>
+          <h3>Pro</h3>
+          <div class="card-price">$199<span>/mo</span></div>
+          <ul class="feature-list">
+            <li>5 AWS Accounts</li>
+            <li>Hourly Scans</li>
+            <li>Slack + Email Alerts</li>
+            <li>90-day history</li>
+            <li>Priority Support</li>
+          </ul>
+          <a href="/dashboard" class="btn-primary" style="text-align: center; display: block;">Get Started</a>
+        </div>
+        <div class="card" style="background: var(--bg-dark);">
+          <h3>Business</h3>
+          <div class="card-price">$299<span>/mo</span></div>
+          <ul class="feature-list">
+            <li>Unlimited Accounts</li>
+            <li>Real-time Scans</li>
+            <li>Custom Integrations</li>
+            <li>1-year history</li>
+            <li>Custom Rules</li>
+            <li>Dedicated Support</li>
+          </ul>
+          <a href="/dashboard" class="btn-outline" style="text-align: center; display: block;">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section reveal">
+    <div class="container">
+      <h2>Ready to secure your cloud infrastructure?</h2>
+      <a href="/dashboard" class="btn-primary" style="font-size: 1.2rem; padding: 15px 40px; display: inline-block;">Start Scanning Now</a>
+      <p class="cta-hint">No credit card required &middot; 14-day free trial</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h4><div class="brand-icon">🛡️</div> Guard Platform</h4>
+        <p>Identify. Protect. Automate. Secure your cloud infrastructure intelligently.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="#products">Cloud Guard (AWS)</a></li>
+          <li><a href="https://github.com/singh-anurag-7991/data-guard" target="_blank">Data Guard (GCP)</a></li>
+          <li><a href="https://github.com/singh-anurag-7991/shield" target="_blank">Shield (OSS)</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="https://github.com/singh-anurag-7991" target="_blank">GitHub</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/docs">Documentation</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="/blog">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Guard Platform. Engineered by <a href="https://github.com/singh-anurag-7991" target="_blank">Anurag Singh</a>.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar Scroll Effect
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // Scroll Reveal Intersection Observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          
+          // Trigger counter animation if stats section
+          if (entry.target.classList.contains('stats-section')) {
+            startCounters();
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Terminal Typing Animation
+    const terminalLines = document.querySelectorAll('#terminal span');
+    let delay = 500;
+    terminalLines.forEach((line, index) => {
+      setTimeout(() => {
+        line.style.opacity = '1';
+        line.style.animation = 'type 0.1s linear';
+      }, delay);
+      // Vary delay for realism
+      delay += (index === 0) ? 800 : (index === 1) ? 1200 : (index === 2) ? 1500 : (index === 3) ? 500 : 300;
+      if (index === 7) delay += 1000;
+    });
+
+    // Counter Animation
+    let countersStarted = false;
+    function startCounters() {
+      if (countersStarted) return;
+      countersStarted = true;
+      
+      document.querySelectorAll('.stat-val').forEach(counter => {
+        const target = parseFloat(counter.getAttribute('data-target'));
+        const prefix = counter.getAttribute('data-prefix') || '';
+        const suffix = counter.getAttribute('data-suffix') || '';
+        const duration = 2000;
+        const steps = 60;
+        const stepTime = duration / steps;
+        let current = 0;
+        
+        const isFloat = target % 1 !== 0;
+        const increment = target / steps;
+        
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          
+          let displayVal = isFloat ? current.toFixed(1) : Math.floor(current);
+          if (target === 847) displayVal += "+";
+          counter.innerText = prefix + displayVal + suffix;
+        }, stepTime);
+      });
+    }
+  </script>
+</body>
+</html>

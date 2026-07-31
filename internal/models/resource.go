@@ -13,6 +13,7 @@ const (
 
 type Resource struct {
 	ID        string
+	TenantID  string
 	AccountID string
 	Type      ResourceType
 	Region    string
@@ -28,6 +29,8 @@ type Resource struct {
 
 type Finding struct {
 	ID             string
+	TenantID       string
+	AccountID      string
 	ResourceID     string
 	ResourceType   ResourceType
 	RiskLevel      string // "HIGH", "MEDIUM", "LOW", "INFO"
