@@ -12,7 +12,13 @@ COPY . .
 
 # CGO_ENABLED=0 produces a fully static binary and keeps the build light enough
 # that default parallelism is safe (no more -p 1 serialisation).
-RUN CGO_ENABLED=0 GOOS=linux go build -o cloud-guard ./cmd/server
+#
+# GIT_SHA is stamped into the binary so /healthz reports which build is live -
+# otherwise "did my deploy land?" can only be answered by SSH-ing in.
+ARG GIT_SHA=dev
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags "-X github.com/singh-anurag-7991/cloud-guard/internal/version.Commit=${GIT_SHA} -X github.com/singh-anurag-7991/cloud-guard/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    -o cloud-guard ./cmd/server
 
 FROM alpine:latest
 

@@ -14,6 +14,7 @@ import (
 	cloudguardaws "github.com/singh-anurag-7991/cloud-guard/internal/aws"
 	"github.com/singh-anurag-7991/cloud-guard/internal/models"
 	"github.com/singh-anurag-7991/cloud-guard/internal/storage"
+	"github.com/singh-anurag-7991/cloud-guard/internal/version"
 )
 
 // ──────────────────────────────────────────────────────────────
@@ -22,10 +23,15 @@ import (
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
+	// commit/built let you confirm which build is actually live from a browser,
+	// instead of guessing whether a deploy finished.
 	json.NewEncoder(w).Encode(map[string]string{
 		"status":  "ok",
 		"service": "cloud-guard",
+		"commit":  version.Commit,
+		"built":   version.BuildTime,
 	})
 }
 

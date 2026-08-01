@@ -57,7 +57,7 @@ systemctl enable --now docker
 cd /home/ec2-user
 git clone $REPO_URL cloud-guard
 cd cloud-guard
-docker build -t cloud-guard .
+docker build --build-arg GIT_SHA=\$(git rev-parse --short HEAD) -t cloud-guard .
 docker run -d -p 80:8080 --name cloud-guard-app --restart unless-stopped -v cloudguard-data:/root/data cloud-guard
 docker ps
 echo "USER_DATA_SCRIPT_COMPLETE"
