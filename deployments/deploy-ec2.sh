@@ -34,8 +34,12 @@ echo "AMI: $AMI_ID"
 
 echo "== Writing user-data (installs Docker, clones repo, builds, runs on port 80) =="
 # Note: heredoc delimiter is unquoted on purpose so $REPO_URL expands below (no sed needed - avoids macOS/BSD sed -i incompatibility)
+# Logs to /var/log/user-data.log so `cat /var/log/user-data.log` over SSH shows the full build output
+# (console output truncates before the Docker build finishes).
 cat > /tmp/user-data.sh << EOF
 #!/bin/bash
+exec > /var/log/user-data.log 2>&1
+set -x
 dnf install -y docker git
 systemctl enable --now docker
 cd /home/ec2-user
@@ -43,12 +47,14 @@ git clone $REPO_URL cloud-guard
 cd cloud-guard
 docker build -t cloud-guard .
 docker run -d -p 80:8080 --name cloud-guard-app --restart unless-stopped -v cloudguard-data:/root/data cloud-guard
+echo "USER_DATA_SCRIPT_COMPLETE"
 EOF
 
 echo "== Launching instance =="
+# t3.small (2 GiB RAM) - t3.micro (1 GiB) OOM'd during the CGO/gcc sqlite3 build, leaving the box unresponsive.
 INSTANCE_ID=$(aws ec2 run-instances \
   --image-id "$AMI_ID" \
-  --instance-type t3.micro \
+  --instance-type t3.small \
   --security-group-ids "$SG_ID" \
   --user-data file:///tmp/user-data.sh \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
