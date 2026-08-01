@@ -9,7 +9,7 @@ Parameters:
   SaaSAccountID:
     Type: String
     Description: 'The AWS Account ID hosting Cloud Guard SaaS'
-    Default: '123456789012' # Will be updated with actual SaaS host AWS Account ID
+    Default: '143506099819' # Cloud Guard production AWS account
 
 Resources:
   CloudGuardReadOnlyRole:

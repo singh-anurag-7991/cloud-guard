@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,6 +11,18 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
+
+// DefaultExternalID must stay in sync with the ExternalId parameter default in
+// deployments/cloudformation.yaml. Override with CLOUDGUARD_EXTERNAL_ID.
+const DefaultExternalID = "cloud-guard-saas"
+
+// ExternalID returns the sts:ExternalId value used when assuming customer roles.
+func ExternalID() string {
+	if v := strings.TrimSpace(os.Getenv("CLOUDGUARD_EXTERNAL_ID")); v != "" {
+		return v
+	}
+	return DefaultExternalID
+}
 
 // Client holds the AWS config and STS client.
 type Client struct {
@@ -36,7 +49,12 @@ func NewClient(ctx context.Context, roleARN string) (*Client, error) {
 			return nil, fmt.Errorf("invalid role ARN format: %s", roleARN)
 		}
 
-		creds := stscreds.NewAssumeRoleProvider(stsClient, roleARN)
+		// The CloudFormation trust policy enforces an sts:ExternalId condition
+		// (guards against the confused-deputy problem). If we don't send a matching
+		// ExternalId here, AssumeRole fails with AccessDenied and no scan can run.
+		creds := stscreds.NewAssumeRoleProvider(stsClient, roleARN, func(o *stscreds.AssumeRoleOptions) {
+			o.ExternalID = aws.String(ExternalID())
+		})
 		cfg.Credentials = aws.NewCredentialsCache(creds)
 	}
 

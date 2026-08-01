@@ -368,15 +368,15 @@
             <!-- AWS Onboarding Card -->
             <div class="onboarding-card" id="onboarding">
                 <div class="onboarding-info">
-                    <h3>🚀 Connect AWS Account (2 Easy Options)</h3>
-                    <p>Option A: Click 1-Click AWS Launch to create the role automatically. <br>Option B: Download the YAML file and upload it in AWS CloudFormation UI ("Upload a template file").</p>
+                    <h3>🚀 Connect Your AWS Account</h3>
+                    <p><strong>1.</strong> Download the template &nbsp;→&nbsp; <strong>2.</strong> Open AWS CloudFormation, choose <em>"Upload a template file"</em> and select it &nbsp;→&nbsp; <strong>3.</strong> Tick the IAM acknowledgement box and click Create &nbsp;→&nbsp; <strong>4.</strong> Copy <code>RoleARN</code> from the stack's <em>Outputs</em> tab and paste it below.<br><small>Creates a read-only role (ReadOnlyAccess + SecurityAudit). No access keys are ever shared.</small></p>
                 </div>
                 <div class="onboarding-btns">
-                    <a href="{{.CloudFormationURL}}" target="_blank" class="btn-cf" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
-                        ☁️ 1-Click AWS Launch
+                    <a href="/cloudformation.yaml" download="cloudformation.yaml" class="btn-cf" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
+                        📥 1. Download Template
                     </a>
-                    <a href="/cloudformation.yaml" download="cloudformation.yaml" class="btn-cf">
-                        📥 Download Template YAML
+                    <a href="{{.CloudFormationURL}}" target="_blank" class="btn-cf">
+                        ☁️ 2. Open AWS CloudFormation
                     </a>
                 </div>
             </div>

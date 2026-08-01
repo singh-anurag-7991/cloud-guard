@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/singh-anurag-7991/cloud-guard/internal/auth"
+	cloudguardaws "github.com/singh-anurag-7991/cloud-guard/internal/aws"
 	"github.com/singh-anurag-7991/cloud-guard/internal/models"
 	"github.com/singh-anurag-7991/cloud-guard/internal/storage"
 )
@@ -99,7 +102,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cfURL := "https://console.aws.amazon.com/cloudformation/home#/stacks/create/page"
+	cfURL := cloudFormationLaunchURL()
 
 	// Calculate estimated savings ($150 per stopped/idle EC2, $200 per oversized RDS)
 	savingsEst := (high * 150) + (med * 100)
@@ -236,17 +239,43 @@ func (s *Server) handleAPIScan(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// cloudFormationLaunchURL builds the AWS console quick-create link.
+//
+// CloudFormation only accepts an S3-hosted templateURL, so a true 1-click link
+// requires the template to be uploaded to a public S3 bucket and that URL set in
+// CF_TEMPLATE_S3_URL. Without it we fall back to the plain create-stack page,
+// where the customer uploads the downloaded YAML themselves (2-click).
+func cloudFormationLaunchURL() string {
+	s3URL := strings.TrimSpace(os.Getenv("CF_TEMPLATE_S3_URL"))
+	if s3URL == "" {
+		return "https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create"
+	}
+	return "https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review" +
+		"?templateURL=" + url.QueryEscape(s3URL) +
+		"&stackName=CloudGuardReadOnlyRole" +
+		"&param_ExternalId=" + url.QueryEscape(cloudguardaws.ExternalID()) +
+		"&param_SaaSAccountID=" + url.QueryEscape(saasAccountID())
+}
+
+// saasAccountID is the AWS account that assumes customer roles. Must match the
+// SaaSAccountID default in deployments/cloudformation.yaml.
+func saasAccountID() string {
+	if v := strings.TrimSpace(os.Getenv("CLOUDGUARD_SAAS_ACCOUNT_ID")); v != "" {
+		return v
+	}
+	return "143506099819"
+}
+
 // handleCloudFormationURL generates CloudFormation launch URL for AWS onboarding
 func (s *Server) handleCloudFormationURL(w http.ResponseWriter, r *http.Request) {
 	tenantID := auth.GetTenantID(r.Context())
-	templateURL := "http://localhost:8080/cloudformation.yaml"
-	awsLaunchURL := "https://console.aws.amazon.com/cloudformation/home#/stacks/create/page"
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"tenant_id":             tenantID,
-		"cloudformation_url":    awsLaunchURL,
-		"template_url":          templateURL,
-		"suggested_external_id": tenantID,
+		"tenant_id":          tenantID,
+		"cloudformation_url": cloudFormationLaunchURL(),
+		"template_url":       "/cloudformation.yaml",
+		"external_id":        cloudguardaws.ExternalID(),
+		"saas_account_id":    saasAccountID(),
 	})
 }
 

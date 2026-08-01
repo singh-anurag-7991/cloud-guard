@@ -25,6 +25,8 @@ RUN apk --no-cache add ca-certificates sqlite-libs
 
 COPY --from=builder /app/cloud-guard .
 COPY --from=builder /app/web ./web
+# Needed by GET /cloudformation.yaml - without this the onboarding download 404s.
+COPY --from=builder /app/deployments ./deployments
 
 EXPOSE 8080
 
