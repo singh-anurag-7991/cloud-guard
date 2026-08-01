@@ -1,7 +1,7 @@
 FROM golang:1.25-alpine AS builder
 
-# Install build dependencies for CGO (sqlite3)
-RUN apk add --no-cache gcc musl-dev
+# No gcc/musl-dev needed: the sqlite driver is pure Go (modernc.org/sqlite),
+# so the build is CGO-free, fast, and low-memory.
 
 WORKDIR /app
 
@@ -10,18 +10,16 @@ RUN go mod download
 
 COPY . .
 
-# Build the binary with CGO enabled.
-# -p 1 limits the compiler to one package at a time. The aws-sdk-go-v2 ec2 package
-# is huge (~900MB RSS to compile on its own); with the default parallelism two
-# concurrent `compile` processes peak at ~1.5GB and OOM-kill small instances.
-RUN CGO_ENABLED=1 GOOS=linux go build -p 1 -o cloud-guard ./cmd/server
+# CGO_ENABLED=0 produces a fully static binary and keeps the build light enough
+# that default parallelism is safe (no more -p 1 serialisation).
+RUN CGO_ENABLED=0 GOOS=linux go build -o cloud-guard ./cmd/server
 
 FROM alpine:latest
 
 WORKDIR /root/
 
-# Install CA certificates (for AWS HTTPS) and sqlite libs
-RUN apk --no-cache add ca-certificates sqlite-libs
+# CA certificates for AWS HTTPS. No sqlite-libs needed - driver is pure Go.
+RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/cloud-guard .
 COPY --from=builder /app/web ./web

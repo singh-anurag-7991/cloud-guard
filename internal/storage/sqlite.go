@@ -6,7 +6,11 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	// Pure-Go SQLite driver (no CGO). Replaced mattn/go-sqlite3 because compiling
+	// its C bindings needed gcc and peaked ~900MB RSS, which OOM-killed small EC2
+	// instances and made every deploy a 10-12 minute build.
+	_ "modernc.org/sqlite"
+
 	"github.com/singh-anurag-7991/cloud-guard/internal/models"
 )
 
@@ -15,7 +19,11 @@ type DB struct {
 }
 
 func InitDB(path string) (*DB, error) {
-	conn, err := sql.Open("sqlite3", path)
+	// WAL lets the background scanner write while the dashboard reads; busy_timeout
+	// makes concurrent writers wait instead of failing with "database is locked".
+	dsn := fmt.Sprintf("file:%s?_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)", path)
+
+	conn, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
