@@ -46,7 +46,7 @@ Cloud Guard is a lightweight, read-only SaaS tool designed for startups and indi
    export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK"
    
    # Run the server
-   go run cmd/server/main.go
+   go run ./cmd/server
    ```
    The dashboard will be available at [http://localhost:8080](http://localhost:8080).
 

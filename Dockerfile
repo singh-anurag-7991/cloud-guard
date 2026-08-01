@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build the binary with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -o cloud-guard cmd/server/main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -o cloud-guard ./cmd/server
 
 FROM alpine:latest
 
