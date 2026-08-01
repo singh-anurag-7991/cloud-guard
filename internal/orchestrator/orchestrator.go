@@ -64,17 +64,24 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 	// silently claiming a successful scan with zero findings.
 	var allResources []models.Resource
 	var scanErrs []string
+	var scannerResults []storage.ScannerResult
 
 	collect := func(name string, res []models.Resource, err error) {
 		if err != nil {
 			log.Printf("%s Scan failed: %v", name, err)
 			scanErrs = append(scanErrs, fmt.Sprintf("%s: %v", name, err))
+			scannerResults = append(scannerResults, storage.ScannerResult{
+				Scanner: name, Status: "failed", Message: friendlyScannerError(err),
+			})
 			return
 		}
 		for i := range res {
 			res[i].TenantID = tenantID
 		}
 		allResources = append(allResources, res...)
+		scannerResults = append(scannerResults, storage.ScannerResult{
+			Scanner: name, Status: "ok", Resources: len(res),
+		})
 	}
 
 	r1, e1 := ec2Scan.Scan(ctx)
@@ -108,6 +115,9 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 	if err := o.DB.SaveFindingsForTenant(scanID, tenantID, findings); err != nil {
 		log.Printf("Failed to save findings: %v", err)
 	}
+	if err := o.DB.SaveScannerResults(scanID, tenantID, scannerResults); err != nil {
+		log.Printf("Failed to save scanner results: %v", err)
+	}
 
 	// 6. Alert
 	for _, f := range findings {
@@ -120,6 +130,22 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 	}
 
 	return nil
+}
+
+// friendlyScannerError turns AWS errors into something actionable on the dashboard.
+func friendlyScannerError(err error) string {
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "not enabled for cost explorer"):
+		return "Cost Explorer is not enabled on this AWS account. Enable it in Billing → Cost Explorer (data takes up to 24h to appear)."
+	case strings.Contains(msg, "AccessDenied"), strings.Contains(msg, "not authorized"):
+		return "Access denied - the role is missing permissions for this service."
+	default:
+		if len(msg) > 200 {
+			msg = msg[:200] + "…"
+		}
+		return msg
+	}
 }
 
 func (o *Orchestrator) ScanAll(ctx context.Context) error {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/singh-anurag-7991/cloud-guard/internal/auth"
@@ -75,17 +76,24 @@ type dashboardData struct {
 	Findings           []models.Finding
 	Accounts           []storage.AccountRecord
 	CloudFormationURL string
+
+	// Real scan telemetry, so a clean scan with zero risks still shows evidence
+	// that it actually inspected the account.
+	ResourcesScanned int
+	LastScanAt       string
+	ScannerResults   []storage.ScannerResult
 }
 
-func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
-	// Only serve exact "/dashboard" path
-	if r.URL.Path != "/dashboard" {
-		http.NotFound(w, r)
-		return
-	}
-
-	tenantID := auth.GetTenantID(r.Context())
+// buildDashboardData assembles the full dashboard state for a tenant.
+//
+// This exists because the error paths used to construct dashboardData by hand
+// with only Error/TenantID/Findings set, which rendered accounts and every
+// counter as 0 - making a failed scan look like the data had been deleted.
+func (s *Server) buildDashboardData(tenantID string) dashboardData {
 	findings, err := s.DB.GetLatestFindingsByTenant(tenantID)
+	if err != nil {
+		log.Printf("Error fetching findings for tenant %s: %v", tenantID, err)
+	}
 	accounts, _ := s.DB.ListAccountsByTenant(tenantID)
 
 	var high, med, low, info int
@@ -102,39 +110,50 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cfURL := cloudFormationLaunchURL()
-
-	// Calculate estimated savings ($150 per stopped/idle EC2, $200 per oversized RDS)
-	savingsEst := (high * 150) + (med * 100)
-	savingsStr := "$0"
-	if savingsEst > 0 {
-		savingsStr = fmt.Sprintf("$%d/mo", savingsEst)
+	savings := "$0"
+	if est := (high * 150) + (med * 100); est > 0 {
+		savings = fmt.Sprintf("$%d/mo", est)
 	}
 
-	data := dashboardData{
-		TenantID:           tenantID,
-		Findings:           findings,
-		Accounts:           accounts,
-		TotalFindings:      len(findings),
-		HighCount:          high,
-		MediumCount:        med,
-		LowCount:           low,
-		InfoCount:          info,
-		AccountsCount:      len(accounts),
-		EstimatedSavings:   savingsStr,
-		CloudFormationURL: cfURL,
+	d := dashboardData{
+		TenantID:          tenantID,
+		Findings:          findings,
+		Accounts:          accounts,
+		TotalFindings:     len(findings),
+		HighCount:         high,
+		MediumCount:       med,
+		LowCount:          low,
+		InfoCount:         info,
+		AccountsCount:     len(accounts),
+		EstimatedSavings:  savings,
+		CloudFormationURL: cloudFormationLaunchURL(),
 	}
 
-	if err != nil {
-		log.Printf("Error fetching findings for tenant %s: %v", tenantID, err)
-		data.Error = "Could not load findings."
+	if sum, err := s.DB.GetLatestScanSummary(tenantID); err == nil && sum != nil {
+		d.ScannerResults = sum.Results
+		d.ResourcesScanned = sum.TotalResourcesScanned()
+		d.LastScanAt = sum.RunAt.Format("2 Jan 2006, 15:04 MST")
+	}
+	return d
+}
+
+func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
+	// Only serve exact "/dashboard" path
+	if r.URL.Path != "/dashboard" {
+		http.NotFound(w, r)
+		return
 	}
 
-	// Handle success query param
-	if r.URL.Query().Get("success") == "account_connected" {
-		data.Success = "AWS Account connected successfully!"
-	} else if r.URL.Query().Get("success") == "scan_complete" {
-		data.Success = "Scan completed successfully!"
+	tenantID := auth.GetTenantID(r.Context())
+	data := s.buildDashboardData(tenantID)
+
+	switch r.URL.Query().Get("success") {
+	case "account_connected":
+		data.Success = "AWS account connected and verified."
+	case "scan_complete":
+		data.Success = "Scan completed."
+	case "account_removed":
+		data.Success = "Account removed."
 	}
 
 	s.renderTemplate(w, "index.html", data)
@@ -147,34 +166,61 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	tenantID := auth.GetTenantID(r.Context())
 	roleARN := strings.TrimSpace(r.FormValue("role_arn"))
+
+	// fail renders the *full* dashboard plus the error, so the page never looks
+	// like the user's connected accounts vanished.
+	fail := func(msg string) {
+		d := s.buildDashboardData(tenantID)
+		d.Error = msg
+		s.renderTemplate(w, "index.html", d)
+	}
+
 	if roleARN == "" {
-		s.renderTemplate(w, "index.html", dashboardData{Error: "Role ARN is required.", TenantID: tenantID})
+		fail("Role ARN is required.")
 		return
 	}
 
-	// Validate it is an IAM *role* ARN. The commonest mistake is pasting the
-	// CloudFormation stack ARN (arn:aws:cloudformation:...:stack/...) instead of the
-	// RoleARN from the stack's Outputs tab, so call that out explicitly.
-	if !strings.HasPrefix(roleARN, "arn:aws:iam::") || !strings.Contains(roleARN, ":role/") {
-		msg := "That doesn't look like an IAM role ARN. It should look like " +
-			"arn:aws:iam::123456789012:role/CloudGuardReadOnlyRole-us-east-1"
-		if strings.HasPrefix(roleARN, "arn:aws:cloudformation:") {
-			msg = "That's the CloudFormation stack ARN, not the role ARN. " +
-				"Open your stack in AWS, go to the Outputs tab, and copy the RoleARN value."
-		}
-		s.renderTemplate(w, "index.html", dashboardData{Error: msg, TenantID: tenantID})
+	if strings.HasPrefix(roleARN, "arn:aws:cloudformation:") {
+		fail("That's the CloudFormation stack ARN, not the role ARN. Open your stack in AWS, go to the Outputs tab, and copy the RoleARN value.")
 		return
 	}
 
-	_, err := s.DB.AddAccountForTenant(tenantID, roleARN)
-	if err != nil {
+	// Actually assume the role before saving it. Previously any well-formed ARN was
+	// accepted and the failure only surfaced later as an opaque scan error.
+	if _, err := cloudguardaws.ValidateRole(r.Context(), roleARN); err != nil {
+		fail(err.Error())
+		return
+	}
+
+	if _, err := s.DB.AddAccountForTenant(tenantID, roleARN); err != nil {
 		log.Printf("Error adding account for tenant %s: %v", tenantID, err)
-		s.renderTemplate(w, "index.html", dashboardData{Error: "Failed to add account: " + err.Error(), TenantID: tenantID})
+		fail("Failed to save the account: " + err.Error())
 		return
 	}
 
-	// Redirect back to dashboard with success
 	http.Redirect(w, r, "/dashboard?success=account_connected", http.StatusSeeOther)
+}
+
+// handleDisconnect removes a connected AWS account and its scan history.
+func (s *Server) handleDisconnect(w http.ResponseWriter, r *http.Request) {
+	tenantID := auth.GetTenantID(r.Context())
+
+	id, err := strconv.ParseInt(strings.TrimSpace(r.FormValue("account_id")), 10, 64)
+	if err != nil {
+		d := s.buildDashboardData(tenantID)
+		d.Error = "Invalid account id."
+		s.renderTemplate(w, "index.html", d)
+		return
+	}
+
+	if err := s.DB.DeleteAccountForTenant(tenantID, id); err != nil {
+		d := s.buildDashboardData(tenantID)
+		d.Error = "Could not remove account: " + err.Error()
+		s.renderTemplate(w, "index.html", d)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard?success=account_removed", http.StatusSeeOther)
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -186,12 +232,9 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 	err := s.Orchestrator.ScanAllForTenant(r.Context(), tenantID)
 	if err != nil {
 		log.Printf("Scan failed for tenant %s: %v", tenantID, err)
-		findings, _ := s.DB.GetLatestFindingsByTenant(tenantID)
-		s.renderTemplate(w, "index.html", dashboardData{
-			Error:    "Scan failed: " + err.Error(),
-			TenantID: tenantID,
-			Findings: findings,
-		})
+		d := s.buildDashboardData(tenantID)
+		d.Error = "Scan failed: " + err.Error()
+		s.renderTemplate(w, "index.html", d)
 		return
 	}
 

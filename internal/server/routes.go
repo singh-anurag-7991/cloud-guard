@@ -31,6 +31,7 @@ func (s *Server) registerRoutes() {
 	// Protected HTML routes
 	s.Router.Handle("GET /dashboard", protect(s.handleDashboard))
 	s.Router.Handle("POST /connect", protect(s.handleConnect))
+	s.Router.Handle("POST /disconnect", protect(s.handleDisconnect))
 	s.Router.Handle("POST /scan", protect(s.handleScan))
 
 	// ── JSON APIs (Protected) ──────────────────────────────────

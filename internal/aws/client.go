@@ -64,6 +64,57 @@ func NewClient(ctx context.Context, roleARN string) (*Client, error) {
 	}, nil
 }
 
+// ValidateRole proves the role can actually be assumed, so onboarding fails fast
+// with a clear reason instead of silently succeeding and blowing up at scan time.
+// Returns the customer's AWS account ID on success.
+func ValidateRole(ctx context.Context, roleARN string) (string, error) {
+	if !strings.HasPrefix(roleARN, "arn:aws:iam::") || !strings.Contains(roleARN, ":role/") {
+		return "", fmt.Errorf("that is not an IAM role ARN - it should look like arn:aws:iam::123456789012:role/CloudGuardReadOnlyRole-us-east-1")
+	}
+
+	// Must match what the app's own IAM policy permits it to assume.
+	if !strings.Contains(roleARN, ":role/CloudGuardReadOnlyRole-") {
+		return "", fmt.Errorf("the role name must start with \"CloudGuardReadOnlyRole-\" (for example CloudGuardReadOnlyRole-us-east-1). Cloud Guard is only permitted to assume roles with that prefix")
+	}
+
+	client, err := NewClient(ctx, roleARN)
+	if err != nil {
+		return "", err
+	}
+
+	// This forces the AssumeRole to actually happen.
+	accountID, err := client.GetAccountID(ctx)
+	if err != nil {
+		return "", explainAssumeRoleError(err)
+	}
+	return accountID, nil
+}
+
+// explainAssumeRoleError turns AWS's opaque errors into something a customer can act on.
+func explainAssumeRoleError(err error) error {
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "not authorized to perform: sts:AssumeRole"),
+		strings.Contains(msg, "is not authorized to perform"):
+		return fmt.Errorf("Cloud Guard is not allowed to assume this role. Check the role's Trust relationships tab - it must trust account %s. A CloudFormation service role will not work here", saasAccountHint())
+	case strings.Contains(msg, "ExternalId") || strings.Contains(msg, "external id"):
+		return fmt.Errorf("the role's ExternalId condition does not match. It must be exactly %q", ExternalID())
+	case strings.Contains(msg, "AccessDenied"):
+		return fmt.Errorf("AccessDenied when assuming the role. Most often the trust policy names the wrong account, or the ExternalId does not match %q. Full error: %v", ExternalID(), err)
+	case strings.Contains(msg, "does not exist") || strings.Contains(msg, "NoSuchEntity"):
+		return fmt.Errorf("that role does not exist in the target AWS account - check the ARN")
+	default:
+		return fmt.Errorf("could not assume the role: %w", err)
+	}
+}
+
+func saasAccountHint() string {
+	if v := strings.TrimSpace(os.Getenv("CLOUDGUARD_SAAS_ACCOUNT_ID")); v != "" {
+		return v
+	}
+	return "143506099819"
+}
+
 // GetAccountID returns the AWS Account ID of the authenticated identity.
 func (c *Client) GetAccountID(ctx context.Context) (string, error) {
 	input := &sts.GetCallerIdentityInput{}

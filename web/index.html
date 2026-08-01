@@ -388,15 +388,86 @@
                 </div>
             </div>
 
-            <!-- Manual Account Connect Form -->
+            <!-- Last Scan Results -->
+            {{if .ScannerResults}}
+            <div class="table-card" id="scan-results">
+                <div class="table-header">
+                    <h3>Last scan &mdash; {{.ResourcesScanned}} resources inspected</h3>
+                    {{if .LastScanAt}}<span style="color:var(--text-muted); font-size:.85rem;">{{.LastScanAt}}</span>{{end}}
+                </div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="text-align:left; color:var(--text-muted); font-size:.8rem;">
+                            <th style="padding:8px 10px;">Service</th>
+                            <th style="padding:8px 10px;">Status</th>
+                            <th style="padding:8px 10px;">Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {{range .ScannerResults}}
+                        <tr style="border-top:1px solid var(--border-color);">
+                            <td style="padding:10px;"><strong>{{.Scanner}}</strong></td>
+                            <td style="padding:10px;">
+                                {{if eq .Status "ok"}}
+                                    <span style="color:#4ade80;">&#10003; Scanned</span>
+                                {{else}}
+                                    <span style="color:#fbbf24;">&#9888; Not scanned</span>
+                                {{end}}
+                            </td>
+                            <td style="padding:10px; color:var(--text-muted); font-size:.88rem;">
+                                {{if eq .Status "ok"}}
+                                    {{.Resources}} resource{{if ne .Resources 1}}s{{end}} checked&nbsp;&mdash;&nbsp;no issues found
+                                {{else}}
+                                    {{.Message}}
+                                {{end}}
+                            </td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+                {{if eq .TotalFindings 0}}
+                <p style="padding:12px 10px 0; color:var(--text-muted); font-size:.88rem;">
+                    No risks found in the services above. That's a clean result, not an empty one &mdash;
+                    findings appear here when Cloud Guard detects stopped or idle EC2 instances,
+                    publicly accessible S3 buckets, or over-provisioned RDS databases.
+                </p>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- Connected Accounts -->
             <div class="table-card" id="accounts">
                 <div class="table-header">
-                    <h3>Connect Account (Manual Role ARN)</h3>
+                    <h3>Connected AWS Accounts</h3>
                 </div>
-                <form action="/connect" method="POST" style="display:flex; gap:12px;">
-                    <input type="text" name="role_arn" placeholder="arn:aws:iam::123456789012:role/CloudGuardRole" required style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-dark); color:white;">
+                {{if .Accounts}}
+                <table style="width:100%; border-collapse:collapse;">
+                    <tbody>
+                    {{range .Accounts}}
+                        <tr style="border-top:1px solid var(--border-color);">
+                            <td style="padding:10px; font-family:monospace; font-size:.82rem; word-break:break-all;">{{.RoleARN}}</td>
+                            <td style="padding:10px; text-align:right; white-space:nowrap;">
+                                <form action="/disconnect" method="POST" style="display:inline;"
+                                      onsubmit="return confirm('Remove this account and its scan history?');">
+                                    <input type="hidden" name="account_id" value="{{.ID}}">
+                                    <button type="submit" style="background:none; border:1px solid var(--border-color); color:#f87171; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:.82rem;">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p style="padding:10px; color:var(--text-muted);">No AWS accounts connected yet.</p>
+                {{end}}
+
+                <form action="/connect" method="POST" style="display:flex; gap:12px; margin-top:16px;">
+                    <input type="text" name="role_arn" placeholder="arn:aws:iam::123456789012:role/CloudGuardReadOnlyRole-us-east-1" required style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-dark); color:white;">
                     <button type="submit" class="btn-scan">Connect Role</button>
                 </form>
+                <p style="margin-top:8px; color:var(--text-muted); font-size:.82rem;">
+                    The role is verified before it's saved &mdash; if Cloud Guard can't assume it, you'll be told exactly why.
+                </p>
             </div>
 
             <!-- Cost Trend Chart -->

@@ -102,6 +102,10 @@ func (db *DB) migrate() error {
 		return err
 	}
 
+	if err := db.migrateScanSummary(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -162,6 +166,25 @@ func (db *DB) ListAccountsByTenant(tenantID string) ([]AccountRecord, error) {
 		accounts = append(accounts, a)
 	}
 	return accounts, nil
+}
+
+// DeleteAccountForTenant removes a connected AWS account and everything derived
+// from it. Scoped by tenant_id so one customer can never delete another's data.
+func (db *DB) DeleteAccountForTenant(tenantID string, accountID int64) error {
+	res, err := db.conn.Exec(`DELETE FROM accounts WHERE id = ? AND tenant_id = ?`, accountID, tenantID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return fmt.Errorf("account not found")
+	}
+
+	// Clean up the scans and findings that belonged to it.
+	db.conn.Exec(`DELETE FROM findings WHERE tenant_id = ? AND scan_id IN (SELECT id FROM scans WHERE account_id = ? AND tenant_id = ?)`, tenantID, accountID, tenantID)
+	db.conn.Exec(`DELETE FROM scan_results WHERE tenant_id = ? AND scan_id IN (SELECT id FROM scans WHERE account_id = ? AND tenant_id = ?)`, tenantID, accountID, tenantID)
+	db.conn.Exec(`DELETE FROM scans WHERE account_id = ? AND tenant_id = ?`, accountID, tenantID)
+	return nil
 }
 
 func (db *DB) CreateScan(accountID int64) (int64, error) {
