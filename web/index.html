@@ -313,10 +313,17 @@
             Cloud Guard
         </a>
         <ul class="nav-list">
-            <li class="nav-item active"><a href="/">📊 Dashboard</a></li>
+            <li class="nav-item active"><a href="/dashboard">📊 Dashboard</a></li>
             <li class="nav-item"><a href="#findings">🔍 Findings</a></li>
             <li class="nav-item"><a href="#accounts">☁️ AWS Accounts</a></li>
             <li class="nav-item"><a href="#onboarding">🚀 Onboarding</a></li>
+            <li class="nav-item">
+                <form method="POST" action="/logout" style="margin:0">
+                    <button type="submit" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:0">
+                        🚪 Sign out
+                    </button>
+                </form>
+            </li>
         </ul>
     </div>
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"strings"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type contextKey string
@@ -12,33 +14,91 @@ type contextKey string
 const (
 	TenantIDKey contextKey = "tenant_id"
 	UserIDKey   contextKey = "user_id"
+
+	// SessionCookie is the cookie holding the opaque session token.
+	SessionCookie = "cg_session"
+
+	// SessionTTL is how long a login stays valid.
+	SessionTTL = 7 * 24 * time.Hour
 )
 
-// RequireAuth is HTTP middleware that verifies authentication (Clerk JWT or session token).
-// If CLERK_SECRET_KEY is empty (e.g. local dev testing), it falls back to tenant "default".
-func RequireAuth(next http.Handler) http.Handler {
+// SessionStore is the subset of storage.DB the auth layer needs.
+type SessionStore interface {
+	LookupSession(token string) (tenantID string, userID int64, ok bool)
+}
+
+// HashPassword returns a bcrypt hash suitable for storage.
+func HashPassword(plain string) (string, error) {
+	b, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+	return string(b), err
+}
+
+// CheckPassword reports whether plain matches the stored bcrypt hash.
+func CheckPassword(hash, plain string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
+}
+
+// SetSessionCookie writes the session cookie. secure is derived from the request
+// so local http testing still works while production stays Secure-only.
+func SetSessionCookie(w http.ResponseWriter, r *http.Request, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookie,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isHTTPS(r),
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(SessionTTL),
+	})
+}
+
+// ClearSessionCookie expires the session cookie on logout.
+func ClearSessionCookie(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookie,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isHTTPS(r),
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+}
+
+// SessionToken reads the raw session token from the request.
+func SessionToken(r *http.Request) string {
+	if c, err := r.Cookie(SessionCookie); err == nil {
+		return c.Value
+	}
+	return ""
+}
+
+// isHTTPS detects TLS directly or via the reverse proxy's X-Forwarded-Proto,
+// which is what Caddy sets in front of this app.
+func isHTTPS(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return r.Header.Get("X-Forwarded-Proto") == "https"
+}
+
+// RequireAuth rejects unauthenticated requests. Browser requests are redirected
+// to /login; API requests get a 401 JSON body.
+//
+// Previously an empty CLERK_SECRET_KEY silently granted everyone tenant
+// "default", leaving the dashboard, /connect, /scan and every /api route open to
+// the whole internet with no credentials.
+func RequireAuth(store SessionStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clerkKey := os.Getenv("CLERK_SECRET_KEY")
-
-		// Dev mode / Local fallback when Clerk is not configured yet
-		if clerkKey == "" {
-			ctx := context.WithValue(r.Context(), TenantIDKey, "default")
-			ctx = context.WithValue(ctx, UserIDKey, "dev-user")
-			next.ServeHTTP(w, r.WithContext(ctx))
+		tenantID, userID, ok := store.LookupSession(SessionToken(r))
+		if !ok {
+			if wantsJSON(r) {
+				w.Header().Set("Content-Type", "application/json")
+				http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+				return
+			}
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
-		}
-
-		// Extract token from Authorization header or __session cookie
-		token := extractToken(r)
-		if token == "" {
-			http.Error(w, `{"error":"unauthorized: missing token"}`, http.StatusUnauthorized)
-			return
-		}
-
-		// Parse basic claims (In production, verify signature against Clerk JWKS)
-		tenantID, userID := parseTokenClaims(token)
-		if tenantID == "" {
-			tenantID = "default"
 		}
 
 		ctx := context.WithValue(r.Context(), TenantIDKey, tenantID)
@@ -47,44 +107,31 @@ func RequireAuth(next http.Handler) http.Handler {
 	})
 }
 
+func wantsJSON(r *http.Request) bool {
+	if r.Header.Get("Accept") == "application/json" {
+		return true
+	}
+	return len(r.URL.Path) >= 5 && r.URL.Path[:5] == "/api/"
+}
+
 // GetTenantID retrieves the authenticated tenant ID from request context.
 func GetTenantID(ctx context.Context) string {
 	if tid, ok := ctx.Value(TenantIDKey).(string); ok && tid != "" {
 		return tid
 	}
-	return "default"
-}
-
-// GetUserID retrieves the authenticated user ID from request context.
-func GetUserID(ctx context.Context) string {
-	if uid, ok := ctx.Value(UserIDKey).(string); ok && uid != "" {
-		return uid
-	}
-	return "dev-user"
-}
-
-func extractToken(r *http.Request) string {
-	// Check Authorization header
-	authHeader := r.Header.Get("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		return strings.TrimPrefix(authHeader, "Bearer ")
-	}
-
-	// Check __session cookie (used by Clerk client SDK)
-	if cookie, err := r.Cookie("__session"); err == nil && cookie.Value != "" {
-		return cookie.Value
-	}
-
 	return ""
 }
 
-// parseTokenClaims extracts subject/user identity from token.
-func parseTokenClaims(token string) (tenantID, userID string) {
-	// Basic JWT payload inspection (split by '.')
-	parts := strings.Split(token, ".")
-	if len(parts) < 2 {
-		return "default", token
+// GetUserID retrieves the authenticated user ID from request context.
+func GetUserID(ctx context.Context) int64 {
+	if uid, ok := ctx.Value(UserIDKey).(int64); ok {
+		return uid
 	}
-	// Fallback to using token value or default if unparseable
-	return "default", token
+	return 0
+}
+
+// SignupsEnabled lets you close public registration once you have customers,
+// by setting DISABLE_SIGNUP=1.
+func SignupsEnabled() bool {
+	return os.Getenv("DISABLE_SIGNUP") == ""
 }

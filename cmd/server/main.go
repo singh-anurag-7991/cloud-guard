@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -29,9 +30,17 @@ func main() {
 		port = "8080"
 	}
 
+	// Must live inside the mounted Docker volume (/root/data), otherwise the DB is
+	// written to the container's ephemeral layer and every redeploy silently wipes
+	// all connected accounts and findings.
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "cloudguard.db"
+		dbPath = "data/cloudguard.db"
+	}
+	if dir := filepath.Dir(dbPath); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			log.Fatalf("Failed to create database directory %s: %v", dir, err)
+		}
 	}
 
 	slackWebhook := os.Getenv("SLACK_WEBHOOK_URL")

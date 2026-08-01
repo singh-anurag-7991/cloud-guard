@@ -17,3 +17,8 @@
 # IDE
 .idea/
 .vscode/
+
+# Local database
+data/
+*.db-wal
+*.db-shm

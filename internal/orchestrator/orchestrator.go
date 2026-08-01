@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/singh-anurag-7991/cloud-guard/internal/alerting"
 	"github.com/singh-anurag-7991/cloud-guard/internal/aws"
@@ -56,47 +57,39 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 	rdsScan := scanner.NewRDSScanner(client)
 	costScan := scanner.NewCostScanner(client)
 
-	// 3. Collect Resources
+	// 3. Collect Resources.
+	// Individual scanner failures are tolerated (one bad service shouldn't abort the
+	// whole scan) but they are counted. If EVERY scanner fails - which is what
+	// happens when AssumeRole is misconfigured - we must report an error rather than
+	// silently claiming a successful scan with zero findings.
 	var allResources []models.Resource
+	var scanErrs []string
 
-	// EC2
-	if res, err := ec2Scan.Scan(ctx); err == nil {
+	collect := func(name string, res []models.Resource, err error) {
+		if err != nil {
+			log.Printf("%s Scan failed: %v", name, err)
+			scanErrs = append(scanErrs, fmt.Sprintf("%s: %v", name, err))
+			return
+		}
 		for i := range res {
 			res[i].TenantID = tenantID
 		}
 		allResources = append(allResources, res...)
-	} else {
-		log.Printf("EC2 Scan failed: %v", err)
 	}
 
-	// S3
-	if res, err := s3Scan.Scan(ctx); err == nil {
-		for i := range res {
-			res[i].TenantID = tenantID
-		}
-		allResources = append(allResources, res...)
-	} else {
-		log.Printf("S3 Scan failed: %v", err)
-	}
+	r1, e1 := ec2Scan.Scan(ctx)
+	collect("EC2", r1, e1)
+	r2, e2 := s3Scan.Scan(ctx)
+	collect("S3", r2, e2)
+	r3, e3 := rdsScan.Scan(ctx)
+	collect("RDS", r3, e3)
+	r4, e4 := costScan.Scan(ctx)
+	collect("Cost", r4, e4)
 
-	// RDS
-	if res, err := rdsScan.Scan(ctx); err == nil {
-		for i := range res {
-			res[i].TenantID = tenantID
-		}
-		allResources = append(allResources, res...)
-	} else {
-		log.Printf("RDS Scan failed: %v", err)
-	}
-
-	// Cost
-	if res, err := costScan.Scan(ctx); err == nil {
-		for i := range res {
-			res[i].TenantID = tenantID
-		}
-		allResources = append(allResources, res...)
-	} else {
-		log.Printf("Cost Scan failed: %v", err)
+	const totalScanners = 4
+	if len(scanErrs) == totalScanners {
+		return fmt.Errorf("all scanners failed (check the role ARN, its trust policy and the ExternalId): %s",
+			strings.Join(scanErrs, "; "))
 	}
 
 	// 4. Evaluate Rules

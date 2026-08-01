@@ -98,6 +98,10 @@ func (db *DB) migrate() error {
 		db.conn.Exec(aq) // Ignore duplicate column error if already exists
 	}
 
+	if err := db.migrateAuth(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

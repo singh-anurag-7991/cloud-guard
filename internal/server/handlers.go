@@ -152,9 +152,17 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Basic ARN format validation
-	if !strings.HasPrefix(roleARN, "arn:aws:iam:") {
-		s.renderTemplate(w, "index.html", dashboardData{Error: "Invalid ARN format. Must start with arn:aws:iam:", TenantID: tenantID})
+	// Validate it is an IAM *role* ARN. The commonest mistake is pasting the
+	// CloudFormation stack ARN (arn:aws:cloudformation:...:stack/...) instead of the
+	// RoleARN from the stack's Outputs tab, so call that out explicitly.
+	if !strings.HasPrefix(roleARN, "arn:aws:iam::") || !strings.Contains(roleARN, ":role/") {
+		msg := "That doesn't look like an IAM role ARN. It should look like " +
+			"arn:aws:iam::123456789012:role/CloudGuardReadOnlyRole-us-east-1"
+		if strings.HasPrefix(roleARN, "arn:aws:cloudformation:") {
+			msg = "That's the CloudFormation stack ARN, not the role ARN. " +
+				"Open your stack in AWS, go to the Outputs tab, and copy the RoleARN value."
+		}
+		s.renderTemplate(w, "index.html", dashboardData{Error: msg, TenantID: tenantID})
 		return
 	}
 

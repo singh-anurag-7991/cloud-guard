@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account | Guard Platform</title>
+<style>
+  :root{--bg:#080c14;--card:#0f1521;--border:#1e2a3d;--accent:#5eead4;--text:#e6edf7;--muted:#8b9bb4;--err:#f87171}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .wrap{width:100%;max-width:400px}
+  .brand{display:block;text-align:center;font-size:1.5rem;font-weight:700;color:var(--text);text-decoration:none;margin-bottom:28px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px}
+  h1{font-size:1.35rem;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+  label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:11px 13px;border-radius:8px;border:1px solid var(--border);
+        background:var(--bg);color:var(--text);font-size:.95rem;margin-bottom:16px}
+  input:focus{outline:none;border-color:var(--accent)}
+  .hint{font-size:.78rem;color:var(--muted);margin:-10px 0 16px}
+  button{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);
+         color:#062024;font-weight:700;font-size:.95rem;cursor:pointer}
+  button:hover{opacity:.9}
+  .msg{padding:11px 13px;border-radius:8px;font-size:.87rem;margin-bottom:18px;
+       background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);color:var(--err)}
+  .alt{text-align:center;margin-top:20px;font-size:.88rem;color:var(--muted)}
+  .alt a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="/" class="brand">🛡️ Guard Platform</a>
+    <div class="card">
+      <h1>Create your account</h1>
+      <p class="sub">Start scanning your AWS account in minutes.</p>
+
+      {{if .Error}}<div class="msg">{{.Error}}</div>{{end}}
+
+      <form method="POST" action="/signup">
+        <label for="email">Work email</label>
+        <input type="email" id="email" name="email" value="{{.Email}}" required autofocus autocomplete="email">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="10" autocomplete="new-password">
+        <p class="hint">At least 10 characters.</p>
+
+        <label for="confirm_password">Confirm password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required minlength="10" autocomplete="new-password">
+
+        <button type="submit">Create account</button>
+      </form>
+
+      <p class="alt">Already registered? <a href="/login">Sign in</a></p>
+    </div>
+  </div>
+</body>
+</html>
