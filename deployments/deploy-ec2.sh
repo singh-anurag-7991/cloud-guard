@@ -40,6 +40,18 @@ cat > /tmp/user-data.sh << EOF
 #!/bin/bash
 exec > /var/log/user-data.log 2>&1
 set -x
+
+# Swap is REQUIRED here. Compiling aws-sdk-go-v2/service/ec2 peaks around 900MB-1.5GB,
+# and EC2 instances ship with zero swap - a t3.small (1.9GB usable) OOM-killed the
+# build mid-flight with no clean error, it just appeared to hang. 4GB swap + the
+# -p 1 build flag in the Dockerfile keeps peak memory well inside the box.
+dd if=/dev/zero of=/swapfile bs=1M count=4096
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+free -h
+
 dnf install -y docker git
 systemctl enable --now docker
 cd /home/ec2-user
@@ -47,14 +59,32 @@ git clone $REPO_URL cloud-guard
 cd cloud-guard
 docker build -t cloud-guard .
 docker run -d -p 80:8080 --name cloud-guard-app --restart unless-stopped -v cloudguard-data:/root/data cloud-guard
+docker ps
 echo "USER_DATA_SCRIPT_COMPLETE"
 EOF
 
+echo "== Ensuring key pair exists (so SSH is always possible) =="
+# Without a key pair the ONLY way in is EC2 Instance Connect, which proved unreliable
+# on this account - that left us with no way to inspect a stuck box. Always attach one.
+if [ ! -f "$HOME/.ssh/$KEY_NAME.pem" ]; then
+  aws ec2 delete-key-pair --key-name "$KEY_NAME" --region $REGION 2>/dev/null || true
+  mkdir -p "$HOME/.ssh"
+  aws ec2 create-key-pair --key-name "$KEY_NAME" --region $REGION \
+    --query 'KeyMaterial' --output text > "$HOME/.ssh/$KEY_NAME.pem"
+  chmod 400 "$HOME/.ssh/$KEY_NAME.pem"
+  echo "Created new key at ~/.ssh/$KEY_NAME.pem"
+else
+  echo "Reusing existing key at ~/.ssh/$KEY_NAME.pem"
+fi
+
 echo "== Launching instance =="
-# t3.small (2 GiB RAM) - t3.micro (1 GiB) OOM'd during the CGO/gcc sqlite3 build, leaving the box unresponsive.
+# t3.small (2 GiB) + 4GB swap. t3.micro (1 GiB) and even t3.small without swap both
+# OOM-killed the Go build silently. 20GB root volume so the swapfile + Docker layers fit.
 INSTANCE_ID=$(aws ec2 run-instances \
   --image-id "$AMI_ID" \
   --instance-type t3.small \
+  --key-name "$KEY_NAME" \
+  --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=20,VolumeType=gp3,DeleteOnTermination=true}' \
   --security-group-ids "$SG_ID" \
   --user-data file:///tmp/user-data.sh \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
@@ -70,6 +100,10 @@ echo ""
 echo "=================================================="
 echo "Instance is up: $INSTANCE_ID"
 echo "Public IP: $PUBLIC_IP"
-echo "App will be live at http://$PUBLIC_IP within ~2 minutes (Docker build takes a bit)."
-echo "Test with: curl http://$PUBLIC_IP"
+echo ""
+echo "The Docker build (Go + CGO, large AWS SDK) takes ~5-10 min. Be patient."
+echo ""
+echo "  Test the app:   curl http://$PUBLIC_IP"
+echo "  Watch the build: ssh -i ~/.ssh/$KEY_NAME.pem ec2-user@$PUBLIC_IP 'sudo tail -f /var/log/user-data.log'"
+echo "  Check container: ssh -i ~/.ssh/$KEY_NAME.pem ec2-user@$PUBLIC_IP 'sudo docker ps -a'"
 echo "=================================================="
