@@ -1,6 +1,6 @@
 # Binaries
-cloud-guard
-server
+/cloud-guard
+/server
 *.exe
 *.dll
 *.so
