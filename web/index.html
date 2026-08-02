@@ -363,7 +363,11 @@
                 <div class="stat-card green">
                     <span class="stat-title">Est. Monthly Savings</span>
                     <span class="stat-value">{{.EstimatedSavings}}</span>
-                    <span class="stat-meta">From idle & stopped resources</span>
+                    {{if .HasPricedFindings}}
+                    <span class="stat-meta">{{.AnnualSavings}} · from {{len .SavingsFindings}} priced finding(s)</span>
+                    {{else}}
+                    <span class="stat-meta">Nothing priced yet — connect an account and scan</span>
+                    {{end}}
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Connected Accounts</span>
@@ -476,6 +480,54 @@
                 <canvas id="findingsChart" height="80"></canvas>
             </div>
 
+            <!-- Savings breakdown: every dollar on this page traces to one named
+                 resource, so a customer can verify the total in their own console. -->
+            {{if .HasPricedFindings}}
+            <div class="table-card" id="savings">
+                <div class="table-header">
+                    <h3>💰 Where your money is going</h3>
+                    <span style="color:var(--text-secondary); font-size:0.85rem;">
+                        {{.EstimatedSavings}} · {{.AnnualSavings}}
+                    </span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Monthly saving</th>
+                            <th>Resource</th>
+                            <th>Region</th>
+                            <th>Why we flagged it</th>
+                            <th>What to do</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .SavingsFindings}}
+                        <tr>
+                            <td style="font-weight:700; color:#22c55e; white-space:nowrap;">
+                                ${{printf "%.2f" .MonthlySavingUSD}}
+                            </td>
+                            <td><code>{{.ResourceID}}</code><br><small style="color:var(--text-secondary);">{{.ResourceType}}</small></td>
+                            <td style="color:var(--text-secondary);">{{if .Region}}{{.Region}}{{else}}—{{end}}</td>
+                            <td>{{.Evidence}}</td>
+                            <td style="color:var(--text-secondary);">{{.Recommendation}}</td>
+                            <td>
+                                {{if eq .Confidence "high"}}
+                                <span class="badge badge-HIGH" style="background:#16a34a;">High</span>
+                                {{else}}
+                                <span class="badge badge-MEDIUM">Check first</span>
+                                {{end}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                <p style="padding:12px 16px; margin:0; color:var(--text-secondary); font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.06);">
+                    {{.PricingNote}}
+                </p>
+            </div>
+            {{end}}
+
             <!-- Findings Table -->
             <div class="table-card" id="findings">
                 <div class="table-header">
@@ -488,6 +540,7 @@
                             <th>Resource ID</th>
                             <th>Type</th>
                             <th>Description</th>
+                            <th>Saving</th>
                             <th>Recommendation</th>
                             <th>Detected</th>
                         </tr>
@@ -496,15 +549,22 @@
                         {{range .Findings}}
                         <tr>
                             <td><span class="badge badge-{{.RiskLevel}}">{{.RiskLevel}}</span></td>
-                            <td><code>{{.ResourceID}}</code></td>
+                            <td><code>{{.ResourceID}}</code>{{if .Region}}<br><small style="color:var(--text-secondary);">{{.Region}}</small>{{end}}</td>
                             <td>{{.ResourceType}}</td>
-                            <td>{{.Description}}</td>
+                            <td>{{.Description}}{{if .Evidence}}<br><small style="color:var(--text-secondary);">{{.Evidence}}</small>{{end}}</td>
+                            <td style="white-space:nowrap;">
+                                {{if gt .MonthlySavingUSD 0.0}}
+                                <strong style="color:#22c55e;">${{printf "%.2f" .MonthlySavingUSD}}/mo</strong>
+                                {{else}}
+                                <span style="color:var(--text-secondary);">—</span>
+                                {{end}}
+                            </td>
                             <td style="color:var(--text-secondary);">{{.Recommendation}}</td>
                             <td style="color:var(--text-secondary);">{{.GeneratedAt.Format "Jan 02 15:04"}}</td>
                         </tr>
                         {{else}}
                         <tr>
-                            <td colspan="6" style="text-align:center; color:var(--text-secondary); padding:32px;">
+                            <td colspan="7" style="text-align:center; color:var(--text-secondary); padding:32px;">
                                 ✨ No security or cost findings! Connect an account and run a scan.
                             </td>
                         </tr>

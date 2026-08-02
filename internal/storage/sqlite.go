@@ -93,6 +93,15 @@ func (db *DB) migrate() error {
 		`ALTER TABLE accounts ADD COLUMN tenant_id TEXT DEFAULT 'default'`,
 		`ALTER TABLE scans ADD COLUMN tenant_id TEXT DEFAULT 'default'`,
 		`ALTER TABLE findings ADD COLUMN tenant_id TEXT DEFAULT 'default'`,
+
+		// Savings columns. Before these existed the dashboard invented a total
+		// from (highCount*150 + mediumCount*100), which had no connection to the
+		// customer's real bill. Findings now carry a priced, evidenced number.
+		`ALTER TABLE findings ADD COLUMN region TEXT DEFAULT ''`,
+		`ALTER TABLE findings ADD COLUMN monthly_saving_usd REAL DEFAULT 0`,
+		`ALTER TABLE findings ADD COLUMN evidence TEXT DEFAULT ''`,
+		`ALTER TABLE findings ADD COLUMN confidence TEXT DEFAULT ''`,
+		`ALTER TABLE findings ADD COLUMN rule_id TEXT DEFAULT ''`,
 	}
 	for _, aq := range alterQueries {
 		db.conn.Exec(aq) // Ignore duplicate column error if already exists
@@ -209,7 +218,10 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 		return err
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO findings (tenant_id, scan_id, resource_id, resource_type, risk_level, description, recommendation, generated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare(`INSERT INTO findings
+		(tenant_id, scan_id, resource_id, resource_type, risk_level, description, recommendation, generated_at,
+		 region, monthly_saving_usd, evidence, confidence, rule_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -220,7 +232,8 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 		if tid == "" {
 			tid = tenantID
 		}
-		_, err := stmt.Exec(tid, scanID, f.ResourceID, f.ResourceType, f.RiskLevel, f.Description, f.Recommendation, f.GeneratedAt)
+		_, err := stmt.Exec(tid, scanID, f.ResourceID, f.ResourceType, f.RiskLevel, f.Description, f.Recommendation, f.GeneratedAt,
+			f.Region, f.MonthlySavingUSD, f.Evidence, f.Confidence, f.RuleID)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -230,22 +243,27 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 	return tx.Commit()
 }
 
+// findingColumns is shared between the two read paths so they can never drift.
+const findingColumns = `tenant_id, resource_id, resource_type, risk_level, description, recommendation,
+	generated_at, region, monthly_saving_usd, evidence, confidence, rule_id`
+
 func (db *DB) GetLatestFindings() ([]models.Finding, error) {
 	return db.GetLatestFindingsByTenant("")
 }
 
 func (db *DB) GetLatestFindingsByTenant(tenantID string) ([]models.Finding, error) {
-	query := "SELECT tenant_id, resource_id, resource_type, risk_level, description, recommendation, generated_at FROM findings ORDER BY generated_at DESC LIMIT 50"
+	// Ordered by money first: a customer scanning their bill wants the $40/mo
+	// unattached volume above the $0.30/mo stale snapshot, not whichever the
+	// scanner happened to write last.
+	const order = " ORDER BY monthly_saving_usd DESC, generated_at DESC LIMIT 200"
+
 	var rows *sql.Rows
 	var err error
-
 	if tenantID != "" {
-		query = "SELECT tenant_id, resource_id, resource_type, risk_level, description, recommendation, generated_at FROM findings WHERE tenant_id = ? ORDER BY generated_at DESC LIMIT 50"
-		rows, err = db.conn.Query(query, tenantID)
+		rows, err = db.conn.Query("SELECT "+findingColumns+" FROM findings WHERE tenant_id = ?"+order, tenantID)
 	} else {
-		rows, err = db.conn.Query(query)
+		rows, err = db.conn.Query("SELECT " + findingColumns + " FROM findings" + order)
 	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -254,10 +272,20 @@ func (db *DB) GetLatestFindingsByTenant(tenantID string) ([]models.Finding, erro
 	var findings []models.Finding
 	for rows.Next() {
 		var f models.Finding
-		if err := rows.Scan(&f.TenantID, &f.ResourceID, &f.ResourceType, &f.RiskLevel, &f.Description, &f.Recommendation, &f.GeneratedAt); err != nil {
+		// Columns added by ALTER are NULL on rows written before the migration,
+		// so the nullable wrappers stop old findings from breaking the dashboard.
+		var region, evidence, confidence, ruleID sql.NullString
+		var saving sql.NullFloat64
+		if err := rows.Scan(&f.TenantID, &f.ResourceID, &f.ResourceType, &f.RiskLevel, &f.Description,
+			&f.Recommendation, &f.GeneratedAt, &region, &saving, &evidence, &confidence, &ruleID); err != nil {
 			log.Println("Error scanning finding:", err)
 			continue
 		}
+		f.Region = region.String
+		f.MonthlySavingUSD = saving.Float64
+		f.Evidence = evidence.String
+		f.Confidence = confidence.String
+		f.RuleID = ruleID.String
 		findings = append(findings, f)
 	}
 	return findings, nil

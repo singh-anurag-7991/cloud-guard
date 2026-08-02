@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/singh-anurag-7991/cloud-guard/internal/alerting"
 	"github.com/singh-anurag-7991/cloud-guard/internal/aws"
@@ -28,6 +30,12 @@ func New(db *storage.DB, slack *alerting.SlackWrapper) *Orchestrator {
 		&rules.S3PublicRule{},
 		&rules.RDSOverProvisionedRule{},
 		&rules.CostSummaryRule{},
+		// Cost-waste rules. These are the ones that put a real dollar figure in
+		// front of the customer, which is the whole reason they connected an account.
+		&rules.EBSUnattachedRule{},
+		&rules.ElasticIPUnusedRule{},
+		&rules.SnapshotStaleRule{},
+		&rules.EBSGp2ToGp3Rule{},
 	}
 	engine := rules.NewEngine(r)
 
@@ -51,22 +59,24 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 		return err
 	}
 
-	// 2. Initialize Scanners
-	ec2Scan := scanner.NewEC2Scanner(client)
-	s3Scan := scanner.NewS3Scanner(client)
-	rdsScan := scanner.NewRDSScanner(client)
-	costScan := scanner.NewCostScanner(client)
-
-	// 3. Collect Resources.
+	// 2. Collect Resources.
 	// Individual scanner failures are tolerated (one bad service shouldn't abort the
 	// whole scan) but they are counted. If EVERY scanner fails - which is what
 	// happens when AssumeRole is misconfigured - we must report an error rather than
 	// silently claiming a successful scan with zero findings.
-	var allResources []models.Resource
-	var scanErrs []string
-	var scannerResults []storage.ScannerResult
+	var (
+		mu             sync.Mutex
+		allResources   []models.Resource
+		scanErrs       []string
+		scannerResults []storage.ScannerResult
+		totalScanners  int
+		okScanners     int
+	)
 
 	collect := func(name string, res []models.Resource, err error) {
+		mu.Lock()
+		defer mu.Unlock()
+		totalScanners++
 		if err != nil {
 			log.Printf("%s Scan failed: %v", name, err)
 			scanErrs = append(scanErrs, fmt.Sprintf("%s: %v", name, err))
@@ -79,25 +89,70 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 			res[i].TenantID = tenantID
 		}
 		allResources = append(allResources, res...)
-		scannerResults = append(scannerResults, storage.ScannerResult{
-			Scanner: name, Status: "ok", Resources: len(res),
-		})
+		okScanners++
+
+		// An account with 15 enabled regions produces 47 scanner rows, most of
+		// them "0 resources" for regions the customer has never used. That
+		// buries the two rows that matter. Only rows with something in them are
+		// worth the customer's attention; the region count is reported separately.
+		if len(res) > 0 {
+			scannerResults = append(scannerResults, storage.ScannerResult{
+				Scanner: name, Status: "ok", Resources: len(res),
+			})
+		}
 	}
 
-	r1, e1 := ec2Scan.Scan(ctx)
-	collect("EC2", r1, e1)
-	r2, e2 := s3Scan.Scan(ctx)
-	collect("S3", r2, e2)
-	r3, e3 := rdsScan.Scan(ctx)
-	collect("RDS", r3, e3)
-	r4, e4 := costScan.Scan(ctx)
-	collect("Cost", r4, e4)
+	// Global services: one call covers every region, so running them per-region
+	// would just bill the customer's API quota for duplicate results.
+	s3Res, s3Err := scanner.NewS3Scanner(client).Scan(ctx)
+	collect("S3", s3Res, s3Err)
+	costRes, costErr := scanner.NewCostScanner(client).Scan(ctx)
+	collect("Cost", costRes, costErr)
 
-	const totalScanners = 4
-	if len(scanErrs) == totalScanners {
+	// Regional services. EC2, EBS and RDS only ever return resources from the
+	// region they were called in, so a single-region scan silently misses
+	// everything the customer runs elsewhere - which is usually where the
+	// forgotten volumes are. Run regions concurrently but bounded, so a customer
+	// with 20 enabled regions doesn't wait 20x longer or trip AWS rate limits.
+	regions := client.ListEnabledRegions(ctx)
+	log.Printf("[Tenant: %s] Scanning %d region(s): %s", tenantID, len(regions), strings.Join(regions, ", "))
+
+	sem := make(chan struct{}, maxConcurrentRegions)
+	var wg sync.WaitGroup
+	for _, region := range regions {
+		wg.Add(1)
+		go func(region string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			regional := client.ForRegion(region)
+			ec2Res, ec2Err := scanner.NewEC2Scanner(regional).Scan(ctx)
+			collect("EC2 ("+region+")", ec2Res, ec2Err)
+			stRes, stErr := scanner.NewStorageScanner(regional).Scan(ctx)
+			collect("Storage ("+region+")", stRes, stErr)
+			rdsRes, rdsErr := scanner.NewRDSScanner(regional).Scan(ctx)
+			collect("RDS ("+region+")", rdsRes, rdsErr)
+		}(region)
+	}
+	wg.Wait()
+
+	if totalScanners > 0 && len(scanErrs) == totalScanners {
 		return fmt.Errorf("all scanners failed (check the role ARN, its trust policy and the ExternalId): %s",
 			strings.Join(scanErrs, "; "))
 	}
+
+	// A scan that inspected 18 regions and legitimately found nothing must not
+	// render as a blank table - that is indistinguishable from a broken scan.
+	// Say what was checked, explicitly.
+	if len(scannerResults) == 0 && okScanners > 0 {
+		scannerResults = append(scannerResults, storage.ScannerResult{
+			Scanner: "All services",
+			Status:  "ok",
+			Message: fmt.Sprintf("Checked EC2, EBS, RDS and S3 across %d region(s) plus Cost Explorer. No resources found.", len(regions)),
+		})
+	}
+	sortScannerResults(scannerResults)
 
 	// 4. Evaluate Rules
 	findings := o.Engine.Evaluate(allResources)
@@ -130,6 +185,20 @@ func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, ac
 	}
 
 	return nil
+}
+
+// maxConcurrentRegions bounds parallel region scans. Unbounded goroutines across
+// 20+ regions would trip AWS API rate limits and produce throttling errors that
+// look to the customer like a broken product.
+const maxConcurrentRegions = 5
+
+// sortScannerResults gives the dashboard a stable order. Without this, the
+// concurrent region scans finish in a different order every run and the results
+// table appears to shuffle itself between refreshes.
+func sortScannerResults(results []storage.ScannerResult) {
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Scanner < results[j].Scanner
+	})
 }
 
 // friendlyScannerError turns AWS errors into something actionable on the dashboard.

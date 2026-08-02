@@ -13,6 +13,7 @@ import (
 	"github.com/singh-anurag-7991/cloud-guard/internal/auth"
 	cloudguardaws "github.com/singh-anurag-7991/cloud-guard/internal/aws"
 	"github.com/singh-anurag-7991/cloud-guard/internal/models"
+	"github.com/singh-anurag-7991/cloud-guard/internal/pricing"
 	"github.com/singh-anurag-7991/cloud-guard/internal/storage"
 	"github.com/singh-anurag-7991/cloud-guard/internal/version"
 )
@@ -83,6 +84,23 @@ type dashboardData struct {
 	Accounts           []storage.AccountRecord
 	CloudFormationURL string
 
+	// SavingsFindings is the subset of findings that carry a real dollar figure,
+	// already sorted by size. These are what a customer came here for.
+	SavingsFindings []models.Finding
+
+	// HasPricedFindings distinguishes "we found nothing to save" from
+	// "we have not priced anything yet" - the template must not show $0 as
+	// though it were a confident result.
+	HasPricedFindings bool
+
+	// AnnualSavings is the monthly figure x12, shown because a $38/mo line item
+	// reads as noise while $456/yr reads as a decision.
+	AnnualSavings string
+
+	// PricingNote states where the numbers come from and what they exclude.
+	// Every savings figure on screen needs this next to it.
+	PricingNote string
+
 	// Real scan telemetry, so a clean scan with zero risks still shows evidence
 	// that it actually inspected the account.
 	ResourcesScanned int
@@ -103,6 +121,8 @@ func (s *Server) buildDashboardData(tenantID string) dashboardData {
 	accounts, _ := s.DB.ListAccountsByTenant(tenantID)
 
 	var high, med, low, info int
+	var monthlyTotal float64
+	var priced []models.Finding
 	for _, f := range findings {
 		switch f.RiskLevel {
 		case "HIGH":
@@ -114,11 +134,22 @@ func (s *Server) buildDashboardData(tenantID string) dashboardData {
 		default:
 			info++
 		}
+		if f.MonthlySavingUSD > 0 {
+			monthlyTotal += f.MonthlySavingUSD
+			priced = append(priced, f)
+		}
 	}
 
+	// The savings total is now the sum of individually priced findings, each of
+	// which names a resource the customer can go and look at. The previous
+	// formula - (highCount*150 + mediumCount*100) - produced a confident number
+	// with no relationship to the customer's bill. A customer who checks that
+	// number once and finds it invented never trusts the product again.
 	savings := "$0"
-	if est := (high * 150) + (med * 100); est > 0 {
-		savings = fmt.Sprintf("$%d/mo", est)
+	annual := "$0"
+	if monthlyTotal > 0 {
+		savings = fmt.Sprintf("$%.2f/mo", monthlyTotal)
+		annual = fmt.Sprintf("$%.0f/yr", monthlyTotal*12)
 	}
 
 	d := dashboardData{
@@ -132,6 +163,12 @@ func (s *Server) buildDashboardData(tenantID string) dashboardData {
 		InfoCount:         info,
 		AccountsCount:     len(accounts),
 		EstimatedSavings:  savings,
+		AnnualSavings:     annual,
+		SavingsFindings:   priced,
+		HasPricedFindings: len(priced) > 0,
+		PricingNote: fmt.Sprintf(
+			"Estimates use AWS %s on-demand list prices (captured %s). Savings Plans, Reserved Instances and volume discounts are not applied, so your actual saving may differ.",
+			pricing.Region, pricing.SourceDate.Format("2 Jan 2006")),
 		CloudFormationURL: cloudFormationLaunchURL(),
 	}
 

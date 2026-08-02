@@ -64,6 +64,22 @@ func NewClient(ctx context.Context, roleARN string) (*Client, error) {
 	}, nil
 }
 
+// ForRegion returns a copy of the client pointed at a different region.
+//
+// The credentials cache is shared, so all regions reuse the single AssumeRole
+// call rather than re-assuming the customer's role once per region. Regional
+// services (EC2, EBS) only ever return resources from their own region, so
+// scanning one region means missing everything a customer runs elsewhere -
+// which for most accounts is where the forgotten volumes actually are.
+func (c *Client) ForRegion(region string) *Client {
+	cfg := c.Config.Copy()
+	cfg.Region = region
+	return &Client{
+		Config:    cfg,
+		STSClient: c.STSClient,
+	}
+}
+
 // ValidateRole proves the role can actually be assumed, so onboarding fails fast
 // with a clear reason instead of silently succeeding and blowing up at scan time.
 // Returns the customer's AWS account ID on success.
