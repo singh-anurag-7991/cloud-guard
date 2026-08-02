@@ -21,15 +21,15 @@ echo "== Stopping old container =="
 docker rm -f "$CONTAINER" 2>/dev/null || true
 
 echo "== Starting new container =="
-# -v cloudguard-data:/root/data is what keeps users, sessions and findings alive
-# across deploys. The DB path default was once /root/cloudguard.db, outside this
-# volume, which silently wiped every account on each deploy.
+# Bind to 127.0.0.1:8080, NOT 0.0.0.0:80.
 #
-# CLOUDGUARD_SNAPSHOT_STALE_DAYS: AWS provides no way to create a back-dated
-# snapshot, so the 90-day default cannot be exercised against a freshly seeded
-# test account. Set to 0 while validating; remove it before real customers.
+# Caddy owns ports 80 and 443 on this box (it terminates TLS and auto-renews the
+# Let's Encrypt cert) and reverse-proxies to 127.0.0.1:8080. Publishing the app
+# on :80 fails with "address already in use", and publishing on 0.0.0.0:8080
+# would expose a plaintext HTTP bypass around Caddy - session cookies are marked
+# Secure, so that path would also silently break login.
 docker run -d \
-  -p 80:8080 \
+  -p 127.0.0.1:8080:8080 \
   --name "$CONTAINER" \
   --restart unless-stopped \
   -v cloudguard-data:/root/data \
@@ -43,5 +43,8 @@ docker ps --filter "name=$CONTAINER" --format 'table {{.Names}}\t{{.Image}}\t{{.
 
 echo ""
 echo "== Version check =="
-curl -s "http://localhost/healthz?cb=$(date +%s)" || echo "(app still starting)"
+# Hit the app directly on 8080, not through Caddy on :80. Caddy only answers for
+# the guardinfra.duckdns.org host header, so curling localhost:80 returns a 404
+# from Caddy and tells you nothing about whether the app came up.
+curl -s "http://127.0.0.1:8080/healthz?cb=$(date +%s)" || echo "(app still starting)"
 echo ""
