@@ -33,6 +33,7 @@ func (s *Server) registerRoutes() {
 	s.Router.Handle("POST /connect", protect(s.handleConnect))
 	s.Router.Handle("POST /disconnect", protect(s.handleDisconnect))
 	s.Router.Handle("POST /scan", protect(s.handleScan))
+	s.Router.Handle("GET /findings.csv", protect(s.handleExportCSV))
 
 	// ── JSON APIs (Protected) ──────────────────────────────────
 	s.Router.Handle("GET /api/findings", protect(s.handleAPIFindings))

@@ -464,15 +464,17 @@
           <div class="term-dot g"></div>
         </div>
         <div class="terminal-content" id="terminal">
-          <span class="term-cmd">$ guard scan --target aws://prod</span>
-          <span class="term-info">[INFO] Initializing Cloud Guard v2.1...</span>
-          <span class="term-ok">[OK] STS AssumeRole: arn:aws:iam::****:role/GuardRole</span>
-          <span class="term-scan">[SCAN] Analyzing 847 resources across 3 regions...</span>
-          <span class="term-alert">[ALERT] 2 S3 buckets with public access detected</span>
-          <span class="term-alert">[ALERT] 4 EC2 instances stopped &gt; 30 days ($620/mo waste)</span>
+          <!-- Illustrative example, labelled as one. The figures below are the
+               real output format: every saving is priced from AWS list prices
+               and names the exact resource, so a customer can verify it. -->
+          <span class="term-cmd">$ guard scan --target aws://prod &nbsp;<em style="opacity:.55">(example output)</em></span>
+          <span class="term-ok">[OK] STS AssumeRole: arn:aws:iam::****:role/CloudGuardReadOnlyRole</span>
+          <span class="term-scan">[SCAN] EC2, EBS, RDS, S3 across every enabled region...</span>
+          <span class="term-alert">[COST] vol-0ab40… 8 GiB gp2, unattached → $0.80/mo</span>
+          <span class="term-alert">[COST] eipalloc-0677… Elastic IP, unassociated → $3.65/mo</span>
+          <span class="term-alert">[RISK] S3 bucket with public access detected</span>
           <span class="term-ok">[OK] RDS instances optimally sized</span>
-          <span class="term-ok">[OK] IAM policies compliance: PASSED</span>
-          <span class="term-success">✓ Scan complete: 6 findings | Est. savings: $620/mo</span>
+          <span class="term-success">✓ Scan complete | Est. savings: $4.45/mo · every figure traced to a resource</span>
         </div>
       </div>
     </div>
@@ -481,21 +483,25 @@
   <!-- Stats Bar -->
   <section class="stats-section reveal">
     <div class="container stats-grid">
+      <!-- Every number here is verifiable. The previous set - "847 resources
+           scanned", "$2.4M+ savings identified", "99.9% uptime SLA" - was
+           invented, and a prospect who checks one invented number stops
+           believing all the others. -->
       <div>
-        <div class="stat-val" data-target="847">0</div>
-        <div class="stat-label">Resources Scanned</div>
+        <div class="stat-val" data-target="9">0</div>
+        <div class="stat-label">Cost &amp; security checks</div>
       </div>
       <div>
-        <div class="stat-val" data-prefix="$" data-suffix="M+" data-target="2.4">0</div>
-        <div class="stat-label">Savings Identified</div>
+        <div class="stat-val" data-target="0">0</div>
+        <div class="stat-label">Credentials we store</div>
       </div>
       <div>
-        <div class="stat-val" data-suffix="%" data-target="99.9">0</div>
-        <div class="stat-label">Uptime SLA</div>
+        <div class="stat-val" data-suffix="/7" data-target="24">0</div>
+        <div class="stat-label">Scheduled scanning</div>
       </div>
       <div>
-        <div class="stat-val" data-prefix="<" data-suffix="s" data-target="30">0</div>
-        <div class="stat-label">Scan Duration</div>
+        <div class="stat-val" data-target="100" data-suffix="%">0</div>
+        <div class="stat-label">Read-only access</div>
       </div>
     </div>
   </section>
@@ -510,7 +516,11 @@
         <div class="step-card">
           <div class="step-num">1</div>
           <h3>Deploy</h3>
-          <p>1-click CloudFormation stack. Read-only IAM role via STS AssumeRole. Zero long-term credentials.</p>
+          <!-- Not "1-click": the customer downloads a template, creates a stack,
+               ticks the IAM acknowledgement and pastes the role ARN back. Four
+               steps. Promising one and delivering four is how onboarding gets
+               abandoned halfway through. -->
+          <p>Launch our CloudFormation template, then paste the role ARN back here. Takes about two minutes. Creates a read-only IAM role assumed via STS — we never hold long-term credentials.</p>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
@@ -734,7 +744,6 @@
           }
           
           let displayVal = isFloat ? current.toFixed(1) : Math.floor(current);
-          if (target === 847) displayVal += "+";
           counter.innerText = prefix + displayVal + suffix;
         }, stepTime);
       });

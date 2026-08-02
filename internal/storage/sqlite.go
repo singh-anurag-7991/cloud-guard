@@ -102,6 +102,7 @@ func (db *DB) migrate() error {
 		`ALTER TABLE findings ADD COLUMN evidence TEXT DEFAULT ''`,
 		`ALTER TABLE findings ADD COLUMN confidence TEXT DEFAULT ''`,
 		`ALTER TABLE findings ADD COLUMN rule_id TEXT DEFAULT ''`,
+		`ALTER TABLE findings ADD COLUMN fix_command TEXT DEFAULT ''`,
 	}
 	for _, aq := range alterQueries {
 		db.conn.Exec(aq) // Ignore duplicate column error if already exists
@@ -220,8 +221,8 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 
 	stmt, err := tx.Prepare(`INSERT INTO findings
 		(tenant_id, scan_id, resource_id, resource_type, risk_level, description, recommendation, generated_at,
-		 region, monthly_saving_usd, evidence, confidence, rule_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		 region, monthly_saving_usd, evidence, confidence, rule_id, fix_command)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -233,7 +234,7 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 			tid = tenantID
 		}
 		_, err := stmt.Exec(tid, scanID, f.ResourceID, f.ResourceType, f.RiskLevel, f.Description, f.Recommendation, f.GeneratedAt,
-			f.Region, f.MonthlySavingUSD, f.Evidence, f.Confidence, f.RuleID)
+			f.Region, f.MonthlySavingUSD, f.Evidence, f.Confidence, f.RuleID, f.FixCommand)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -245,7 +246,7 @@ func (db *DB) SaveFindingsForTenant(scanID int64, tenantID string, findings []mo
 
 // findingColumns is shared between the two read paths so they can never drift.
 const findingColumns = `tenant_id, resource_id, resource_type, risk_level, description, recommendation,
-	generated_at, region, monthly_saving_usd, evidence, confidence, rule_id`
+	generated_at, region, monthly_saving_usd, evidence, confidence, rule_id, fix_command`
 
 func (db *DB) GetLatestFindings() ([]models.Finding, error) {
 	return db.GetLatestFindingsByTenant("")
@@ -274,10 +275,10 @@ func (db *DB) GetLatestFindingsByTenant(tenantID string) ([]models.Finding, erro
 		var f models.Finding
 		// Columns added by ALTER are NULL on rows written before the migration,
 		// so the nullable wrappers stop old findings from breaking the dashboard.
-		var region, evidence, confidence, ruleID sql.NullString
+		var region, evidence, confidence, ruleID, fixCmd sql.NullString
 		var saving sql.NullFloat64
 		if err := rows.Scan(&f.TenantID, &f.ResourceID, &f.ResourceType, &f.RiskLevel, &f.Description,
-			&f.Recommendation, &f.GeneratedAt, &region, &saving, &evidence, &confidence, &ruleID); err != nil {
+			&f.Recommendation, &f.GeneratedAt, &region, &saving, &evidence, &confidence, &ruleID, &fixCmd); err != nil {
 			log.Println("Error scanning finding:", err)
 			continue
 		}
@@ -286,6 +287,7 @@ func (db *DB) GetLatestFindingsByTenant(tenantID string) ([]models.Finding, erro
 		f.Evidence = evidence.String
 		f.Confidence = confidence.String
 		f.RuleID = ruleID.String
+		f.FixCommand = fixCmd.String
 		findings = append(findings, f)
 	}
 	return findings, nil

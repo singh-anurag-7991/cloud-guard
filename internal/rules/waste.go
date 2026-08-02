@@ -97,7 +97,12 @@ func (r *EBSUnattachedRule) Evaluate(res models.Resource) *models.Finding {
 		MonthlySavingUSD: saving,
 		Evidence:         evidence,
 		// High confidence: an unattached volume is provably serving no instance.
-		Confidence:  models.ConfidenceHigh,
+		Confidence: models.ConfidenceHigh,
+		// Snapshot first, delete second. Handing over a bare delete-volume for a
+		// volume we cannot see inside would eventually destroy someone's data.
+		FixCommand: fmt.Sprintf(
+			"aws ec2 create-snapshot --volume-id %s --region %s --description 'pre-delete backup' && aws ec2 delete-volume --volume-id %s --region %s",
+			res.ID, res.Region, res.ID, res.Region),
 		GeneratedAt: time.Now(),
 	}
 }
@@ -130,7 +135,8 @@ func (r *ElasticIPUnusedRule) Evaluate(res models.Resource) *models.Finding {
 		MonthlySavingUSD: pricing.IdleElasticIPMonthlyCost(),
 		Evidence: fmt.Sprintf("Address %s has no association (no instance ID, no network interface), billed at $%.3f/hour",
 			res.Name, pricing.IdleElasticIPPerHour),
-		Confidence:  models.ConfidenceHigh,
+		Confidence: models.ConfidenceHigh,
+		FixCommand: fmt.Sprintf("aws ec2 release-address --allocation-id %s --region %s", res.ID, res.Region),
 		GeneratedAt: time.Now(),
 	}
 }
@@ -198,7 +204,13 @@ func (r *SnapshotStaleRule) Evaluate(res models.Resource) *models.Finding {
 		Evidence:         evidence,
 		// Medium: age alone does not prove it is unwanted. It may back an AMI or
 		// satisfy a compliance retention rule, so a human should confirm.
-		Confidence:  models.ConfidenceMedium,
+		Confidence: models.ConfidenceMedium,
+		// Deliberately paired with the AMI check. Deleting a snapshot that backs
+		// a registered AMI breaks every future launch from that AMI, and the
+		// failure surfaces weeks later when someone tries to scale out.
+		FixCommand: fmt.Sprintf(
+			"aws ec2 describe-images --owners self --filters Name=block-device-mapping.snapshot-id,Values=%s --region %s  # if this returns nothing, then: aws ec2 delete-snapshot --snapshot-id %s --region %s",
+			res.ID, res.Region, res.ID, res.Region),
 		GeneratedAt: time.Now(),
 	}
 }
@@ -247,7 +259,8 @@ func (r *EBSGp2ToGp3Rule) Evaluate(res models.Resource) *models.Finding {
 			size, pricing.EBSGp2PerGBMonth, pricing.EBSMonthlyCost("gp2", size),
 			pricing.EBSGp3PerGBMonth, pricing.EBSMonthlyCost("gp3", size)),
 		// High: this is arithmetic on published list prices, not an inference.
-		Confidence:  models.ConfidenceHigh,
+		Confidence: models.ConfidenceHigh,
+		FixCommand: fmt.Sprintf("aws ec2 modify-volume --volume-id %s --volume-type gp3 --region %s", res.ID, res.Region),
 		GeneratedAt: time.Now(),
 	}
 }

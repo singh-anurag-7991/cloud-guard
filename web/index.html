@@ -47,7 +47,15 @@
             padding: 24px 16px;
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: 24px;
+            /* Sticky so the nav counts and last-scan time stay visible while
+               scrolling a long findings table - that is when you most want to
+               jump between sections. */
+            position: sticky;
+            top: 0;
+            align-self: flex-start;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         .logo {
@@ -99,6 +107,72 @@
         .nav-item.active a {
             color: var(--accent-blue);
             background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .nav-group-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            opacity: 0.55;
+            padding: 14px 14px 2px;
+            list-style: none;
+        }
+
+        /* Counts sit hard right so the eye can scan the column of numbers
+           without reading any of the labels. */
+        .nav-count {
+            margin-left: auto;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        .nav-count-red   { background: rgba(239, 68, 68, 0.18);  color: #fca5a5; }
+        .nav-count-green { background: rgba(34, 197, 94, 0.18);  color: #86efac; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 14px;
+            font-size: 0.72rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .sidebar-footer strong { color: var(--text-primary); font-weight: 600; }
+
+        /* Copy-to-clipboard button for the AWS CLI fix commands. */
+        .fix-cmd {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            background: rgba(59, 130, 246, 0.12);
+            color: #93c5fd;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .fix-cmd:hover { background: rgba(59, 130, 246, 0.22); }
+        .fix-cmd.copied { border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.15); color: #86efac; }
+
+        .filter-box {
+            width: 100%;
+            max-width: 320px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 0.85rem;
         }
 
         /* Main Content */
@@ -312,19 +386,57 @@
             <div class="logo-icon">🛡️</div>
             Cloud Guard
         </a>
+        <!-- Each item carries its own count. A menu that says "Findings" tells
+             you nothing; one that says "Findings 12" tells you whether it is
+             worth clicking. Sections with nothing in them are hidden entirely
+             rather than leading to an empty page. -->
         <ul class="nav-list">
-            <li class="nav-item active"><a href="/dashboard">📊 Dashboard</a></li>
-            <li class="nav-item"><a href="#findings">🔍 Findings</a></li>
-            <li class="nav-item"><a href="#accounts">☁️ AWS Accounts</a></li>
-            <li class="nav-item"><a href="#onboarding">🚀 Onboarding</a></li>
+            <li class="nav-group-label">Overview</li>
+            <li class="nav-item active"><a href="#top" data-spy="top">📊 Summary</a></li>
+
+            {{if .HasPricedFindings}}
+            <li class="nav-item">
+                <a href="#savings" data-spy="savings">
+                    💰 Savings <span class="nav-count nav-count-green">{{.EstimatedSavings}}</span>
+                </a>
+            </li>
+            {{end}}
+
+            <li class="nav-item">
+                <a href="#findings" data-spy="findings">
+                    🔍 Findings
+                    {{if .TotalFindings}}<span class="nav-count{{if .HighCount}} nav-count-red{{end}}">{{.TotalFindings}}</span>{{end}}
+                </a>
+            </li>
+
+            <li class="nav-group-label">Setup</li>
+            <li class="nav-item">
+                <a href="#accounts" data-spy="accounts">
+                    ☁️ AWS Accounts
+                    {{if .AccountsCount}}<span class="nav-count">{{.AccountsCount}}</span>{{end}}
+                </a>
+            </li>
+            {{if not .AccountsCount}}
+            <li class="nav-item"><a href="#onboarding" data-spy="onboarding">🚀 Connect an account</a></li>
+            {{end}}
+
+            <li class="nav-group-label">Actions</li>
+            <li class="nav-item"><a href="/findings.csv">⬇️ Export CSV</a></li>
             <li class="nav-item">
                 <form method="POST" action="/logout" style="margin:0">
-                    <button type="submit" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:0">
+                    <button type="submit" style="background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:0;width:100%;text-align:left">
                         🚪 Sign out
                     </button>
                 </form>
             </li>
         </ul>
+
+        {{if .LastScanAt}}
+        <div class="sidebar-footer">
+            Last scan<br><strong>{{.LastScanAt}}</strong><br>
+            {{.ResourcesScanned}} resources inspected
+        </div>
+        {{end}}
     </div>
 
     <!-- Main Content Area -->
@@ -349,7 +461,7 @@
             {{end}}
 
             <!-- Stat Cards -->
-            <div class="stats-grid">
+            <div class="stats-grid" id="top">
                 <div class="stat-card">
                     <span class="stat-title">Total Findings</span>
                     <span class="stat-value">{{.TotalFindings}}</span>
@@ -510,7 +622,12 @@
                             <td><code>{{.ResourceID}}</code><br><small style="color:var(--text-secondary);">{{.ResourceType}}</small></td>
                             <td style="color:var(--text-secondary);">{{if .Region}}{{.Region}}{{else}}—{{end}}</td>
                             <td>{{.Evidence}}</td>
-                            <td style="color:var(--text-secondary);">{{.Recommendation}}</td>
+                            <td style="color:var(--text-secondary);">
+                                {{.Recommendation}}
+                                {{if .FixCommand}}
+                                <br><button type="button" class="fix-cmd" data-cmd="{{.FixCommand}}">📋 Copy AWS CLI command</button>
+                                {{end}}
+                            </td>
                             <td>
                                 {{if eq .Confidence "high"}}
                                 <span class="badge badge-HIGH" style="background:#16a34a;">High</span>
@@ -531,9 +648,15 @@
             <!-- Findings Table -->
             <div class="table-card" id="findings">
                 <div class="table-header">
-                    <h3>Active Findings & Recommendations</h3>
+                    <h3>Active Findings &amp; Recommendations</h3>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="search" id="findingFilter" class="filter-box"
+                               placeholder="Filter by resource, region or type…"
+                               aria-label="Filter findings">
+                        <a href="/findings.csv" class="fix-cmd" style="text-decoration:none;">⬇️ CSV</a>
+                    </div>
                 </div>
-                <table>
+                <table id="findingsTable">
                     <thead>
                         <tr>
                             <th>Severity</th>
@@ -549,6 +672,7 @@
                         {{range .Findings}}
                         <tr>
                             <td><span class="badge badge-{{.RiskLevel}}">{{.RiskLevel}}</span></td>
+                            {{/* the filter script reads textContent from the whole row */}}
                             <td><code>{{.ResourceID}}</code>{{if .Region}}<br><small style="color:var(--text-secondary);">{{.Region}}</small>{{end}}</td>
                             <td>{{.ResourceType}}</td>
                             <td>{{.Description}}{{if .Evidence}}<br><small style="color:var(--text-secondary);">{{.Evidence}}</small>{{end}}</td>
@@ -559,7 +683,12 @@
                                 <span style="color:var(--text-secondary);">—</span>
                                 {{end}}
                             </td>
-                            <td style="color:var(--text-secondary);">{{.Recommendation}}</td>
+                            <td style="color:var(--text-secondary);">
+                                {{.Recommendation}}
+                                {{if .FixCommand}}
+                                <br><button type="button" class="fix-cmd" data-cmd="{{.FixCommand}}">📋 Copy fix command</button>
+                                {{end}}
+                            </td>
                             <td style="color:var(--text-secondary);">{{.GeneratedAt.Format "Jan 02 15:04"}}</td>
                         </tr>
                         {{else}}
@@ -618,6 +747,84 @@
                 }
             }
         });
+    </script>
+
+    <script>
+    // ── Copy the AWS CLI fix command ──────────────────────────────────────
+    // Event delegation on document rather than a listener per button: the
+    // findings table can hold 200 rows, and 200 listeners is wasteful for
+    // something clicked once.
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.fix-cmd[data-cmd]');
+        if (!btn) return;
+
+        const cmd = btn.dataset.cmd;
+        const done = () => {
+            const original = btn.textContent;
+            btn.textContent = '✅ Copied';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+        };
+
+        // navigator.clipboard is undefined on plain HTTP and in older browsers.
+        // Falling back rather than failing silently matters here: a copy button
+        // that does nothing looks like a broken product.
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(cmd).then(done).catch(() => window.prompt('Copy this command:', cmd));
+        } else {
+            window.prompt('Copy this command:', cmd);
+        }
+    });
+
+    // ── Filter the findings table ─────────────────────────────────────────
+    const filter = document.getElementById('findingFilter');
+    if (filter) {
+        const rows = Array.from(document.querySelectorAll('#findingsTable tbody tr'));
+        filter.addEventListener('input', function () {
+            const q = filter.value.trim().toLowerCase();
+            let visible = 0;
+            rows.forEach(row => {
+                const match = !q || row.textContent.toLowerCase().includes(q);
+                row.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+
+            // Tell the user their filter matched nothing, instead of showing a
+            // blank table that reads as "the data disappeared".
+            let empty = document.getElementById('noFilterMatch');
+            if (visible === 0 && q) {
+                if (!empty) {
+                    empty = document.createElement('tr');
+                    empty.id = 'noFilterMatch';
+                    empty.innerHTML = '<td colspan="7" style="text-align:center;color:var(--text-secondary);padding:24px;">No findings match that filter.</td>';
+                    document.querySelector('#findingsTable tbody').appendChild(empty);
+                }
+                empty.style.display = '';
+            } else if (empty) {
+                empty.style.display = 'none';
+            }
+        });
+    }
+
+    // ── Highlight the sidebar item for whatever section you're looking at ──
+    const spyLinks = Array.from(document.querySelectorAll('.nav-item a[data-spy]'));
+    const sections = spyLinks
+        .map(a => document.getElementById(a.dataset.spy))
+        .filter(Boolean);
+
+    if (sections.length && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                spyLinks.forEach(a => a.parentElement.classList.toggle(
+                    'active', a.dataset.spy === entry.target.id));
+            });
+        // Top third of the viewport: a section counts as "current" once its
+        // heading reaches the upper area, which is where people actually read.
+        }, { rootMargin: '-10% 0px -66% 0px' });
+
+        sections.forEach(s => observer.observe(s));
+    }
     </script>
 </body>
 </html>

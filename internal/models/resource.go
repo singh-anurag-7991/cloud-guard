@@ -68,4 +68,15 @@ type Finding struct {
 
 	// RuleID is the stable identifier, e.g. "ebs-unattached-volume".
 	RuleID string
+
+	// FixCommand is a ready-to-run AWS CLI command that resolves this finding.
+	//
+	// The gap between "you are wasting $40/month" and the customer actually
+	// saving it is them working out the exact command, with the right resource
+	// ID and the right region. Closing that gap is most of the product's value;
+	// a finding they never act on saves nobody anything.
+	//
+	// Empty when there is no single safe command (e.g. a public S3 bucket may
+	// be public deliberately, so we do not hand over a one-liner that breaks it).
+	FixCommand string
 }
