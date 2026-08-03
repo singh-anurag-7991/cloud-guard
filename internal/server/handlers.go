@@ -37,17 +37,9 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Landing Page (HTML) — Public marketing & portfolio showcase
-// ──────────────────────────────────────────────────────────────
-
-func (s *Server) handleLandingPage(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	s.renderTemplate(w, "landing.html", nil)
-}
-
+// Landing Page — see internal/server/portfolio.go.
+// "/" now serves the personal portfolio; the Cloud Guard marketing page lives
+// at /cloud-guard and is reached from the portfolio's products box.
 // ──────────────────────────────────────────────────────────────
 // Products Page (HTML) — Deep-dive into Guard Platform products
 // ──────────────────────────────────────────────────────────────

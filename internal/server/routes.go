@@ -16,10 +16,20 @@ func (s *Server) registerRoutes() {
 	// Health check — load balancer / monitoring ke liye
 	s.Router.HandleFunc("GET /healthz", s.handleHealthz)
 
-	// Public Pages — Marketing & Portfolio
-	s.Router.HandleFunc("GET /", s.handleLandingPage)
+	// ── Public pages ───────────────────────────────────────────
+	// "/" is the personal portfolio; the Cloud Guard marketing page moved to
+	// /cloud-guard and is reached from the portfolio's products box.
+	s.Router.HandleFunc("GET /", s.handlePortfolio)
+	s.Router.HandleFunc("GET /cloud-guard", s.handleCloudGuardMarketing)
 	s.Router.HandleFunc("GET /products", s.handleProducts)
 	s.Router.HandleFunc("GET /about", s.handleAbout)
+
+	// Static assets (portrait, any future images).
+	// max-age=86400 rather than immutable: the filename is not content-hashed,
+	// so a year-long cache would strip the ability to ever replace the photo.
+	staticFS := http.FileServer(http.Dir("web/static"))
+	s.Router.Handle("GET /static/", http.StripPrefix("/static/",
+		cacheControl(staticFS, "public, max-age=86400")))
 
 	// ── Auth (public) ──────────────────────────────────────────
 	s.Router.HandleFunc("GET /login", s.handleLoginPage)
@@ -47,4 +57,12 @@ func (s *Server) registerRoutes() {
 	s.Router.Handle("POST /api/billing/portal", protect(s.Billing.HandlePortal))
 	// Stripe webhooks are server-to-server and authenticated by signature, not session.
 	s.Router.HandleFunc("POST /api/webhooks/stripe", s.Billing.HandleWebhook)
+}
+
+// cacheControl sets a Cache-Control header on a handler's responses.
+func cacheControl(h http.Handler, value string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", value)
+		h.ServeHTTP(w, r)
+	})
 }

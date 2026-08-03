@@ -116,6 +116,10 @@ func (db *DB) migrate() error {
 		return err
 	}
 
+	if err := db.migratePageViews(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
