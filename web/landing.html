@@ -525,7 +525,11 @@
         <div class="step-card">
           <div class="step-num">2</div>
           <h3>Scan</h3>
-          <p>Automated multi-region scan of EC2, S3, RDS, IAM, and Cost Explorer. Results in under 30 seconds.</p>
+          <!-- No speed claim. A multi-region scan makes a CloudWatch call per
+               instance and walks every enabled region; "under 30 seconds" was
+               invented and is wrong for any account of real size. Describe what
+               it covers, not how fast, until it is actually measured. -->
+          <p>Scans EC2, EBS, Elastic IPs, snapshots, RDS, S3 and Cost Explorer across every region you have enabled.</p>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
@@ -556,15 +560,19 @@
           </ul>
           <a href="/signup" class="btn-primary" style="text-align: center; display: block;">Get Started &rarr;</a>
         </div>
+        <!-- Data Guard is a data *validation* engine — not GCP security.
+             This card previously described BigQuery and GCS scanning, which the
+             project has never done. Anyone who clicked through to the repo would
+             have found something unrelated to what this card promised. -->
         <div class="card card-data">
-          <div class="card-badge badge-soon">🟡 COMING SOON</div>
+          <div class="card-badge badge-oss">🟣 OPEN SOURCE</div>
           <h3>Data Guard</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 20px;">GCP Data Security</p>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">A firewall for bad data</p>
           <ul class="feature-list">
-            <li>BigQuery slot & query cost auditor</li>
-            <li>GCS bucket permission scanner</li>
-            <li>GCP IAM over-privileged detection</li>
-            <li>Unified multi-cloud dashboard</li>
+            <li>Validates API payloads and SQL rows against declarative rules</li>
+            <li>Pushes checks down into SQL instead of pulling every row</li>
+            <li>Alerts only when status flips, so the channel stays readable</li>
+            <li>Catches silent failures before they break logic downstream</li>
           </ul>
           <a href="https://github.com/singh-anurag-7991/data-guard" target="_blank" class="btn-outline" style="text-align: center; display: block;">View on GitHub</a>
         </div>
@@ -587,46 +595,41 @@
   <!-- Pricing -->
   <section id="pricing" class="section reveal" style="background: var(--bg-card); border-top: 1px solid var(--border-color);">
     <div class="container">
+      <!-- Three priced tiers used to sit here — $99, $199, $299 — with "Hourly
+           Scans" and "Real-time Scans" as the things you got for paying more.
+           Stripe has no live keys, so nothing could have charged anyone, and
+           neither hourly nor real-time scanning exists. Publishing a price you
+           cannot take and features you cannot deliver is the fastest way to be
+           told to leave by the first serious prospect who tries.
+
+           This comes back as a real pricing table when Stripe is wired up and
+           the tiers describe something the product does. -->
       <div class="section-header">
-        <h2>Simple, Transparent Pricing</h2>
+        <h2>Pricing</h2>
       </div>
-      <div class="cards-grid">
+
+      <div class="cards-grid" style="grid-template-columns: minmax(0, 560px); justify-content: center;">
         <div class="card" style="background: var(--bg-dark);">
-          <h3>Starter</h3>
-          <div class="card-price">$99<span>/mo</span></div>
+          <div class="card-badge badge-popular">EARLY ACCESS</div>
+          <h3>Free while we are early</h3>
+          <div class="card-price">$0<span>/mo</span></div>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            Cloud Guard is new and I would rather have your feedback than your
+            money. Connect an account, see what it finds, and tell me what is
+            wrong with it.
+          </p>
           <ul class="feature-list">
-            <li>1 AWS Account</li>
-            <li>Daily Scans</li>
-            <li>Email Alerts</li>
-            <li>30-day history</li>
+            <li>Connect as many AWS accounts as you like</li>
+            <li>Scans every region you have enabled</li>
+            <li>Nine cost and security checks, priced from AWS list prices</li>
+            <li>CSV export and a copyable fix command per finding</li>
+            <li>Scheduled scans, with Slack alerts if you configure a webhook</li>
           </ul>
-          <a href="/signup" class="btn-outline" style="text-align: center; display: block;">Get Started</a>
-        </div>
-        <div class="card card-pro" style="background: var(--bg-dark);">
-          <div class="card-badge badge-popular">POPULAR</div>
-          <h3>Pro</h3>
-          <div class="card-price">$199<span>/mo</span></div>
-          <ul class="feature-list">
-            <li>5 AWS Accounts</li>
-            <li>Hourly Scans</li>
-            <li>Slack + Email Alerts</li>
-            <li>90-day history</li>
-            <li>Priority Support</li>
-          </ul>
-          <a href="/signup" class="btn-primary" style="text-align: center; display: block;">Get Started</a>
-        </div>
-        <div class="card" style="background: var(--bg-dark);">
-          <h3>Business</h3>
-          <div class="card-price">$299<span>/mo</span></div>
-          <ul class="feature-list">
-            <li>Unlimited Accounts</li>
-            <li>Real-time Scans</li>
-            <li>Custom Integrations</li>
-            <li>1-year history</li>
-            <li>Custom Rules</li>
-            <li>Dedicated Support</li>
-          </ul>
-          <a href="mailto:anurag7979singh@gmail.com" class="btn-outline" style="text-align: center; display: block;">Contact Sales</a>
+          <a href="/signup" class="btn-primary" style="text-align: center; display: block;">Create an account</a>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 16px; text-align: center;">
+            When paid plans arrive you will be told before anything changes,
+            and nothing will start charging on its own.
+          </p>
         </div>
       </div>
     </div>
@@ -637,7 +640,7 @@
     <div class="container">
       <h2>Ready to secure your cloud infrastructure?</h2>
       <a href="/signup" class="btn-primary" style="font-size: 1.2rem; padding: 15px 40px; display: inline-block;">Start Scanning Now</a>
-      <p class="cta-hint">No credit card required &middot; 14-day free trial</p>
+      <p class="cta-hint">Free while Cloud Guard is in early access &middot; no card, no trial clock</p>
     </div>
   </section>
 
@@ -652,7 +655,7 @@
         <h4>Products</h4>
         <ul>
           <li><a href="#products">Cloud Guard (AWS)</a></li>
-          <li><a href="https://github.com/singh-anurag-7991/data-guard" target="_blank">Data Guard (GCP)</a></li>
+          <li><a href="https://github.com/singh-anurag-7991/data-guard" target="_blank">Data Guard (data validation)</a></li>
           <li><a href="https://github.com/singh-anurag-7991/shield" target="_blank">Shield (OSS)</a></li>
         </ul>
       </div>

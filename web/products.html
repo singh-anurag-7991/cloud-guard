@@ -358,7 +358,7 @@ Findings → SQLite → Dashboard + Slack Alerts
             
             <div style="margin-top: 2rem;">
                 <a href="/dashboard" class="btn-primary" style="font-size: 1.1rem; padding: 0.75rem 1.5rem;">Launch Cloud Guard</a>
-                <span style="color: var(--text-secondary); margin-left: 1rem;">Starting at $99/mo</span>
+                <span style="color: var(--text-secondary); margin-left: 1rem;">Free while in early access</span>
             </div>
         </div>
     </section>
@@ -367,27 +367,29 @@ Findings → SQLite → Dashboard + Slack Alerts
     <section class="product-section">
         <div class="reveal">
             <div class="badge amber">🟡 COMING SOON</div>
-            <h2 class="section-title">Data Guard — GCP Security & Cost Scanner</h2>
+            <h2 class="section-title">Data Guard — A firewall for bad data</h2>
             <p class="subtitle" style="margin-left: 0; text-align: left;">
-                Unified security and cost scanning extending our capabilities to Google Cloud Platform infrastructure.
+                Catches silent data failures in APIs and databases before they break logic downstream.
+                A column that changed type, a load that brought a tenth of its usual rows, a field that
+                went from 2% null to 60% — none of these throw an error, and all of them are wrong.
             </p>
-            
+
             <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
                 <div class="card amber">
-                    <h3>BigQuery Auditor</h3>
-                    <p>BigQuery slot & query cost tracking.</p>
+                    <h3>Source agnostic</h3>
+                    <p>The same rules run against API payloads and SQL rows.</p>
                 </div>
                 <div class="card amber">
-                    <h3>GCS Scanner</h3>
-                    <p>Google Cloud Storage Bucket Permission Scanner.</p>
+                    <h3>SQL pushdown</h3>
+                    <p>Compiles rules into WHERE clauses so failures are found without pulling every row.</p>
                 </div>
                 <div class="card amber">
-                    <h3>IAM Detector</h3>
-                    <p>GCP IAM Over-privileged Service Account Detector.</p>
+                    <h3>Declarative rules</h3>
+                    <p>JSON rule definitions that are portable and readable by non-authors.</p>
                 </div>
                 <div class="card amber">
-                    <h3>Compute Optimizer</h3>
-                    <p>Compute Engine Instance Right-sizing.</p>
+                    <h3>Alerts on change only</h3>
+                    <p>A state machine fires on PASS ↔ FAIL transitions, not on every run.</p>
                 </div>
             </div>
             
@@ -460,39 +462,39 @@ http.Handle("/api/", limiter.Middleware(apiHandler))
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Cloud Provider</td>
-                            <td>AWS</td>
-                            <td>GCP</td>
-                            <td>Agnostic</td>
+                            <td>What it watches</td>
+                            <td>AWS accounts</td>
+                            <td>APIs &amp; SQL databases</td>
+                            <td>Your API traffic</td>
                         </tr>
                         <tr>
                             <td>Status</td>
                             <td><span class="badge cyan" style="margin:0; font-size:0.75rem;">LIVE</span></td>
-                            <td><span class="badge amber" style="margin:0; font-size:0.75rem;">SOON</span></td>
+                            <td><span class="badge amber" style="margin:0; font-size:0.75rem;">OSS</span></td>
                             <td><span class="badge purple" style="margin:0; font-size:0.75rem;">OSS</span></td>
                         </tr>
                         <tr>
                             <td>Pricing</td>
-                            <td>From $99/mo</td>
-                            <td>TBD</td>
+                            <td>Free in early access</td>
+                            <td>Free</td>
                             <td>Free</td>
                         </tr>
                         <tr>
-                            <td>Language</td>
-                            <td>Go / Vue</td>
-                            <td>Go / Vue</td>
-                            <td>Go</td>
+                            <td>Built with</td>
+                            <td>Go · SQLite</td>
+                            <td>Go · PostgreSQL · Next.js</td>
+                            <td>Go · Redis</td>
                         </tr>
                         <tr>
-                            <td>Deployment</td>
-                            <td>SaaS</td>
-                            <td>SaaS</td>
-                            <td>Self-hosted / SDK</td>
+                            <td>How you run it</td>
+                            <td>Hosted</td>
+                            <td>Self-hosted</td>
+                            <td>Self-hosted</td>
                         </tr>
                         <tr>
                             <td>Key Feature</td>
                             <td>Cost & Security Audits</td>
-                            <td>Unified GCP Scanning</td>
+                            <td>Catching bad data early</td>
                             <td>Rate Limiting</td>
                         </tr>
                         <tr>
