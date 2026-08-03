@@ -103,6 +103,17 @@ func (db *DB) migrate() error {
 		`ALTER TABLE findings ADD COLUMN confidence TEXT DEFAULT ''`,
 		`ALTER TABLE findings ADD COLUMN rule_id TEXT DEFAULT ''`,
 		`ALTER TABLE findings ADD COLUMN fix_command TEXT DEFAULT ''`,
+
+		// The ExternalId this account was connected with.
+		//
+		// Stored per account rather than looked up per tenant at scan time,
+		// because the two can legitimately differ: accounts connected before
+		// per-tenant IDs existed used the old shared value, and their AWS role
+		// still has that value in its trust policy. Re-deriving would present
+		// the wrong ExternalId and break every scan for existing customers.
+		// Empty means "connected before this change" and falls back to the
+		// legacy default.
+		`ALTER TABLE accounts ADD COLUMN external_id TEXT DEFAULT ''`,
 	}
 	for _, aq := range alterQueries {
 		db.conn.Exec(aq) // Ignore duplicate column error if already exists
@@ -120,17 +131,28 @@ func (db *DB) migrate() error {
 		return err
 	}
 
+	if err := db.migrateExternalIDs(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // AddAccount adds an AWS account for the default tenant.
 func (db *DB) AddAccount(roleARN string) (int64, error) {
-	return db.AddAccountForTenant("default", roleARN)
+	return db.AddAccountForTenant("default", roleARN, "")
 }
 
 // AddAccountForTenant adds an AWS account under a specific tenant ID.
-func (db *DB) AddAccountForTenant(tenantID, roleARN string) (int64, error) {
-	res, err := db.conn.Exec("INSERT INTO accounts (tenant_id, role_arn) VALUES (?, ?)", tenantID, roleARN)
+//
+// externalID is recorded as it was at connect time. Storing it means a later
+// change to the tenant's ExternalId cannot silently break an already-connected
+// account whose AWS trust policy still names the old value.
+func (db *DB) AddAccountForTenant(tenantID, roleARN, externalID string) (int64, error) {
+	res, err := db.conn.Exec(
+		"INSERT INTO accounts (tenant_id, role_arn, external_id) VALUES (?, ?, ?)",
+		tenantID, roleARN, externalID,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -142,44 +164,47 @@ type AccountRecord struct {
 	ID       int64
 	TenantID string
 	RoleARN  string
+	// ExternalID is empty for accounts connected before per-tenant IDs existed.
+	// The AWS client falls back to the legacy shared value in that case.
+	ExternalID string
+}
+
+const accountColumns = "id, tenant_id, role_arn, COALESCE(external_id, '')"
+
+// scanAccounts reads rows into AccountRecords. Shared so the two list queries
+// cannot drift in column order — a mistake that compiles cleanly and then puts
+// a role ARN in the ExternalID field.
+func scanAccounts(rows *sql.Rows) ([]AccountRecord, error) {
+	defer rows.Close()
+	var accounts []AccountRecord
+	for rows.Next() {
+		var a AccountRecord
+		if err := rows.Scan(&a.ID, &a.TenantID, &a.RoleARN, &a.ExternalID); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, a)
+	}
+	return accounts, rows.Err()
 }
 
 // ListAccounts lists all accounts (across all tenants).
 func (db *DB) ListAccounts() ([]AccountRecord, error) {
-	rows, err := db.conn.Query("SELECT id, tenant_id, role_arn FROM accounts")
+	rows, err := db.conn.Query("SELECT " + accountColumns + " FROM accounts")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var accounts []AccountRecord
-	for rows.Next() {
-		var a AccountRecord
-		if err := rows.Scan(&a.ID, &a.TenantID, &a.RoleARN); err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, a)
-	}
-	return accounts, nil
+	return scanAccounts(rows)
 }
 
 // ListAccountsByTenant returns all connected accounts for a specific tenant.
 func (db *DB) ListAccountsByTenant(tenantID string) ([]AccountRecord, error) {
-	rows, err := db.conn.Query("SELECT id, tenant_id, role_arn FROM accounts WHERE tenant_id = ?", tenantID)
+	rows, err := db.conn.Query(
+		"SELECT "+accountColumns+" FROM accounts WHERE tenant_id = ?", tenantID,
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var accounts []AccountRecord
-	for rows.Next() {
-		var a AccountRecord
-		if err := rows.Scan(&a.ID, &a.TenantID, &a.RoleARN); err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, a)
-	}
-	return accounts, nil
+	return scanAccounts(rows)
 }
 
 // DeleteAccountForTenant removes a connected AWS account and everything derived

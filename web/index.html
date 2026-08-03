@@ -163,6 +163,45 @@
         .fix-cmd:hover { background: rgba(59, 130, 246, 0.22); }
         .fix-cmd.copied { border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.15); color: #86efac; }
 
+        /* External ID panel in onboarding. The customer has to copy two values
+           into CloudFormation, so both get their own row and their own button
+           rather than being buried in a paragraph. */
+        .external-id-box {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.07);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+        .eid-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .eid-label {
+            display: block;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+        .eid-value {
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            font-size: 0.86rem;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .eid-note {
+            margin: 12px 0 0;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
         .filter-box {
             width: 100%;
             max-width: 320px;
@@ -492,7 +531,34 @@
             <div class="onboarding-card" id="onboarding">
                 <div class="onboarding-info">
                     <h3>🚀 Connect Your AWS Account</h3>
-                    <p><strong>1.</strong> Download the template &nbsp;→&nbsp; <strong>2.</strong> Open AWS CloudFormation, choose <em>"Upload a template file"</em> and select it &nbsp;→&nbsp; <strong>3.</strong> Tick the IAM acknowledgement box and click Create &nbsp;→&nbsp; <strong>4.</strong> Copy <code>RoleARN</code> from the stack's <em>Outputs</em> tab and paste it below.<br><small>Creates a read-only role (ReadOnlyAccess + SecurityAudit). No access keys are ever shared.</small></p>
+                    <p><strong>1.</strong> Download the template &nbsp;→&nbsp; <strong>2.</strong> Open AWS CloudFormation, choose <em>"Upload a template file"</em> and select it &nbsp;→&nbsp; <strong>3.</strong> Paste your External ID below into the <code>ExternalId</code> parameter, tick the IAM acknowledgement box and click Create &nbsp;→&nbsp; <strong>4.</strong> Copy <code>RoleARN</code> from the stack's <em>Outputs</em> tab and paste it here.<br><small>Creates a read-only role (ReadOnlyAccess + SecurityAudit). No access keys are ever shared.</small></p>
+
+                    <!-- The customer cannot complete step 3 without this, and it
+                         is unique to them: a shared External ID would let anyone
+                         who knows it connect this role ARN to their own account
+                         and read this AWS account through us. -->
+                    {{if .ExternalID}}
+                    <div class="external-id-box">
+                        <div class="eid-row">
+                            <div>
+                                <span class="eid-label">Your External ID</span>
+                                <code class="eid-value" id="externalId">{{.ExternalID}}</code>
+                            </div>
+                            <button type="button" class="fix-cmd" data-cmd="{{.ExternalID}}">📋 Copy</button>
+                        </div>
+                        <div class="eid-row" style="margin-top:10px">
+                            <div>
+                                <span class="eid-label">Trusted AWS account (SaaSAccountID)</span>
+                                <code class="eid-value">{{.SaaSAccountID}}</code>
+                            </div>
+                            <button type="button" class="fix-cmd" data-cmd="{{.SaaSAccountID}}">📋 Copy</button>
+                        </div>
+                        <p class="eid-note">
+                            Unique to your account. Anyone with this value and your role ARN could read
+                            your AWS account through Cloud Guard &mdash; treat it like a password.
+                        </p>
+                    </div>
+                    {{end}}
                 </div>
                 <div class="onboarding-btns">
                     <a href="/cloudformation.yaml" download="cloudformation.yaml" class="btn-cf" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">

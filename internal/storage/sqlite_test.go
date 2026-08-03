@@ -77,13 +77,15 @@ func TestMultiTenantIsolation(t *testing.T) {
 	tenantA := "tenant-alpha"
 	tenantB := "tenant-beta"
 
-	// Add accounts for Tenant A and Tenant B
-	accA, err := db.AddAccountForTenant(tenantA, "arn:aws:iam::111:role/Alpha")
+	// Add accounts for Tenant A and Tenant B.
+	// Each carries its own ExternalId — see storage/externalid.go for why a
+	// shared one would let either tenant connect the other's role ARN.
+	accA, err := db.AddAccountForTenant(tenantA, "arn:aws:iam::111:role/Alpha", "cg-alpha-external-id")
 	if err != nil {
 		t.Fatalf("AddAccountForTenant A failed: %v", err)
 	}
 
-	accB, err := db.AddAccountForTenant(tenantB, "arn:aws:iam::222:role/Beta")
+	accB, err := db.AddAccountForTenant(tenantB, "arn:aws:iam::222:role/Beta", "cg-beta-external-id")
 	if err != nil {
 		t.Fatalf("AddAccountForTenant B failed: %v", err)
 	}

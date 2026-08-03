@@ -12,16 +12,29 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-// DefaultExternalID must stay in sync with the ExternalId parameter default in
-// deployments/cloudformation.yaml. Override with CLOUDGUARD_EXTERNAL_ID.
-const DefaultExternalID = "cloud-guard-saas"
+// LegacyExternalID is the single shared value every customer used before
+// per-tenant IDs existed.
+//
+// It is kept only so accounts connected under the old scheme keep working —
+// their AWS trust policy still contains this string, and we cannot change what
+// is in someone else's account. New connections get an unguessable per-tenant
+// value from storage.ExternalIDForTenant.
+//
+// Do not use this for anything new. It appears in the public CloudFormation
+// template, so it is not a secret, and a shared ExternalId lets one customer
+// connect another customer's role ARN and read their account through us.
+const LegacyExternalID = "cloud-guard-saas"
 
-// ExternalID returns the sts:ExternalId value used when assuming customer roles.
-func ExternalID() string {
+// resolveExternalID picks the value to present to STS.
+func resolveExternalID(externalID string) string {
+	if v := strings.TrimSpace(externalID); v != "" {
+		return v
+	}
+	// An env override still wins for local testing against a hand-made role.
 	if v := strings.TrimSpace(os.Getenv("CLOUDGUARD_EXTERNAL_ID")); v != "" {
 		return v
 	}
-	return DefaultExternalID
+	return LegacyExternalID
 }
 
 // Client holds the AWS config and STS client.
@@ -32,7 +45,7 @@ type Client struct {
 
 // NewClient establishes a session. If roleARN is provided, it assumes that role.
 // Otherwise it uses default credentials (useful for local dev/hosting).
-func NewClient(ctx context.Context, roleARN string) (*Client, error) {
+func NewClient(ctx context.Context, roleARN, externalID string) (*Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
@@ -49,11 +62,12 @@ func NewClient(ctx context.Context, roleARN string) (*Client, error) {
 			return nil, fmt.Errorf("invalid role ARN format: %s", roleARN)
 		}
 
-		// The CloudFormation trust policy enforces an sts:ExternalId condition
-		// (guards against the confused-deputy problem). If we don't send a matching
-		// ExternalId here, AssumeRole fails with AccessDenied and no scan can run.
+		// The customer's trust policy requires a matching sts:ExternalId. That
+		// condition is what stops one customer pasting another customer's role
+		// ARN into their own account and reading it through us — so the value
+		// must be the one *that account* was connected with, never a global.
 		creds := stscreds.NewAssumeRoleProvider(stsClient, roleARN, func(o *stscreds.AssumeRoleOptions) {
-			o.ExternalID = aws.String(ExternalID())
+			o.ExternalID = aws.String(resolveExternalID(externalID))
 		})
 		cfg.Credentials = aws.NewCredentialsCache(creds)
 	}
@@ -83,7 +97,7 @@ func (c *Client) ForRegion(region string) *Client {
 // ValidateRole proves the role can actually be assumed, so onboarding fails fast
 // with a clear reason instead of silently succeeding and blowing up at scan time.
 // Returns the customer's AWS account ID on success.
-func ValidateRole(ctx context.Context, roleARN string) (string, error) {
+func ValidateRole(ctx context.Context, roleARN, externalID string) (string, error) {
 	if !strings.HasPrefix(roleARN, "arn:aws:iam::") || !strings.Contains(roleARN, ":role/") {
 		return "", fmt.Errorf("that is not an IAM role ARN - it should look like arn:aws:iam::123456789012:role/CloudGuardReadOnlyRole-us-east-1")
 	}
@@ -93,7 +107,7 @@ func ValidateRole(ctx context.Context, roleARN string) (string, error) {
 		return "", fmt.Errorf("the role name must start with \"CloudGuardReadOnlyRole-\" (for example CloudGuardReadOnlyRole-us-east-1). Cloud Guard is only permitted to assume roles with that prefix")
 	}
 
-	client, err := NewClient(ctx, roleARN)
+	client, err := NewClient(ctx, roleARN, externalID)
 	if err != nil {
 		return "", err
 	}
@@ -101,22 +115,22 @@ func ValidateRole(ctx context.Context, roleARN string) (string, error) {
 	// This forces the AssumeRole to actually happen.
 	accountID, err := client.GetAccountID(ctx)
 	if err != nil {
-		return "", explainAssumeRoleError(err)
+		return "", explainAssumeRoleError(err, resolveExternalID(externalID))
 	}
 	return accountID, nil
 }
 
 // explainAssumeRoleError turns AWS's opaque errors into something a customer can act on.
-func explainAssumeRoleError(err error) error {
+func explainAssumeRoleError(err error, externalID string) error {
 	msg := err.Error()
 	switch {
 	case strings.Contains(msg, "not authorized to perform: sts:AssumeRole"),
 		strings.Contains(msg, "is not authorized to perform"):
 		return fmt.Errorf("Cloud Guard is not allowed to assume this role. Check the role's Trust relationships tab - it must trust account %s. A CloudFormation service role will not work here", saasAccountHint())
 	case strings.Contains(msg, "ExternalId") || strings.Contains(msg, "external id"):
-		return fmt.Errorf("the role's ExternalId condition does not match. It must be exactly %q", ExternalID())
+		return fmt.Errorf("the role's ExternalId condition does not match. It must be exactly %q", externalID)
 	case strings.Contains(msg, "AccessDenied"):
-		return fmt.Errorf("AccessDenied when assuming the role. Most often the trust policy names the wrong account, or the ExternalId does not match %q. Full error: %v", ExternalID(), err)
+		return fmt.Errorf("AccessDenied when assuming the role. Most often the trust policy names the wrong account, or the ExternalId does not match %q. Full error: %v", externalID, err)
 	case strings.Contains(msg, "does not exist") || strings.Contains(msg, "NoSuchEntity"):
 		return fmt.Errorf("that role does not exist in the target AWS account - check the ARN")
 	default:

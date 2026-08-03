@@ -93,6 +93,14 @@ type dashboardData struct {
 	// Every savings figure on screen needs this next to it.
 	PricingNote string
 
+	// ExternalID is this tenant's own sts:ExternalId, shown during onboarding.
+	// It is unique per customer: a shared value would let anyone who knows it
+	// connect somebody else's role ARN and read that account through us.
+	ExternalID string
+
+	// SaaSAccountID is the AWS account the customer's role must trust.
+	SaaSAccountID string
+
 	// Real scan telemetry, so a clean scan with zero risks still shows evidence
 	// that it actually inspected the account.
 	ResourcesScanned int
@@ -111,6 +119,14 @@ func (s *Server) buildDashboardData(tenantID string) dashboardData {
 		log.Printf("Error fetching findings for tenant %s: %v", tenantID, err)
 	}
 	accounts, _ := s.DB.ListAccountsByTenant(tenantID)
+
+	// This tenant's ExternalId. The customer has to paste it into the
+	// CloudFormation parameter, so it has to be on screen — a per-customer
+	// secret they never see is a per-customer secret they cannot use.
+	externalID, err := s.DB.ExternalIDForTenant(tenantID)
+	if err != nil {
+		log.Printf("external id lookup failed for tenant %s: %v", tenantID, err)
+	}
 
 	var high, med, low, info int
 	var monthlyTotal float64
@@ -161,7 +177,9 @@ func (s *Server) buildDashboardData(tenantID string) dashboardData {
 		PricingNote: fmt.Sprintf(
 			"Estimates use AWS %s on-demand list prices (captured %s). Savings Plans, Reserved Instances and volume discounts are not applied, so your actual saving may differ.",
 			pricing.Region, pricing.SourceDate.Format("2 Jan 2006")),
-		CloudFormationURL: cloudFormationLaunchURL(),
+		CloudFormationURL: cloudFormationLaunchURL(externalID),
+		ExternalID:        externalID,
+		SaaSAccountID:     saasAccountID(),
 	}
 
 	if sum, err := s.DB.GetLatestScanSummary(tenantID); err == nil && sum != nil {
@@ -220,14 +238,28 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This tenant's own ExternalId. Validation and every later scan must use the
+	// same value, and it must be this tenant's — presenting a shared one is what
+	// would let somebody connect another customer's role ARN and read their
+	// account through us.
+	externalID, err := s.DB.ExternalIDForTenant(tenantID)
+	if err != nil {
+		log.Printf("external id lookup failed for tenant %s: %v", tenantID, err)
+		fail("Could not start the connection. Please try again.")
+		return
+	}
+
 	// Actually assume the role before saving it. Previously any well-formed ARN was
 	// accepted and the failure only surfaced later as an opaque scan error.
-	if _, err := cloudguardaws.ValidateRole(r.Context(), roleARN); err != nil {
+	if _, err := cloudguardaws.ValidateRole(r.Context(), roleARN, externalID); err != nil {
 		fail(err.Error())
 		return
 	}
 
-	if _, err := s.DB.AddAccountForTenant(tenantID, roleARN); err != nil {
+	// Record the ExternalId alongside the ARN. If this tenant's value ever
+	// rotates, accounts connected under the old one keep working until their
+	// trust policy is updated.
+	if _, err := s.DB.AddAccountForTenant(tenantID, roleARN, externalID); err != nil {
 		log.Printf("Error adding account for tenant %s: %v", tenantID, err)
 		fail("Failed to save the account: " + err.Error())
 		return
@@ -331,7 +363,7 @@ func (s *Server) handleAPIScan(w http.ResponseWriter, r *http.Request) {
 // requires the template to be uploaded to a public S3 bucket and that URL set in
 // CF_TEMPLATE_S3_URL. Without it we fall back to the plain create-stack page,
 // where the customer uploads the downloaded YAML themselves (2-click).
-func cloudFormationLaunchURL() string {
+func cloudFormationLaunchURL(externalID string) string {
 	s3URL := strings.TrimSpace(os.Getenv("CF_TEMPLATE_S3_URL"))
 	if s3URL == "" {
 		return "https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create"
@@ -339,7 +371,7 @@ func cloudFormationLaunchURL() string {
 	return "https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review" +
 		"?templateURL=" + url.QueryEscape(s3URL) +
 		"&stackName=CloudGuardReadOnlyRole" +
-		"&param_ExternalId=" + url.QueryEscape(cloudguardaws.ExternalID()) +
+		"&param_ExternalId=" + url.QueryEscape(externalID) +
 		"&param_SaaSAccountID=" + url.QueryEscape(saasAccountID())
 }
 
@@ -356,11 +388,20 @@ func saasAccountID() string {
 func (s *Server) handleCloudFormationURL(w http.ResponseWriter, r *http.Request) {
 	tenantID := auth.GetTenantID(r.Context())
 
+	externalID, err := s.DB.ExternalIDForTenant(tenantID)
+	if err != nil {
+		log.Printf("external id lookup failed for tenant %s: %v", tenantID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": "could not generate onboarding details",
+		})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, map[string]string{
 		"tenant_id":          tenantID,
-		"cloudformation_url": cloudFormationLaunchURL(),
+		"cloudformation_url": cloudFormationLaunchURL(externalID),
 		"template_url":       "/cloudformation.yaml",
-		"external_id":        cloudguardaws.ExternalID(),
+		"external_id":        externalID,
 		"saas_account_id":    saasAccountID(),
 	})
 }

@@ -4,8 +4,20 @@ Description: 'Cloud Guard - Read-Only IAM Role for Automated AWS Cost & Security
 Parameters:
   ExternalId:
     Type: String
-    Description: 'Unique External ID provided by Cloud Guard to prevent confused deputy attacks'
-    Default: 'cloud-guard-saas'
+    # No Default, deliberately.
+    #
+    # This used to default to 'cloud-guard-saas' — the same value for every
+    # customer, printed in a public template. That is not a secret, and a shared
+    # ExternalId means anyone who knows it can paste YOUR role ARN into THEIR
+    # Cloud Guard account and read this AWS account through us.
+    #
+    # Leaving it required forces each customer to paste the unique value shown
+    # on their own dashboard. A stack that will not deploy without it is far
+    # better than one that deploys insecurely by default.
+    MinLength: 8
+    AllowedPattern: '^cg-[A-Za-z0-9_-]{16,}$'
+    ConstraintDescription: 'Copy the External ID shown on your Cloud Guard dashboard (it starts with cg-).'
+    Description: 'The External ID from your Cloud Guard dashboard. Unique to your account - do not share it.'
   SaaSAccountID:
     Type: String
     Description: 'The AWS Account ID hosting Cloud Guard SaaS'

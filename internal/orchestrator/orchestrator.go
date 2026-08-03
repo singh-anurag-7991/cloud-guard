@@ -47,14 +47,19 @@ func New(db *storage.DB, slack *alerting.SlackWrapper) *Orchestrator {
 }
 
 func (o *Orchestrator) RunScan(ctx context.Context, accountID int64, roleARN string) error {
-	return o.RunScanForTenant(ctx, "default", accountID, roleARN)
+	return o.RunScanForTenant(ctx, "default", accountID, roleARN, "")
 }
 
-func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, accountID int64, roleARN string) error {
+// RunScanForTenant scans one connected account.
+//
+// externalID is the value that account was connected with — not a global and
+// not re-derived from the tenant. See storage/externalid.go for why that
+// distinction is the thing keeping one customer out of another's AWS account.
+func (o *Orchestrator) RunScanForTenant(ctx context.Context, tenantID string, accountID int64, roleARN, externalID string) error {
 	log.Printf("[Tenant: %s] Starting scan for account %s...", tenantID, roleARN)
 
 	// 1. Create AWS Client
-	client, err := aws.NewClient(ctx, roleARN)
+	client, err := aws.NewClient(ctx, roleARN, externalID)
 	if err != nil {
 		return err
 	}
@@ -229,7 +234,7 @@ func (o *Orchestrator) ScanAll(ctx context.Context) error {
 
 	var errs []error
 	for _, acc := range accounts {
-		if err := o.RunScanForTenant(ctx, acc.TenantID, acc.ID, acc.RoleARN); err != nil {
+		if err := o.RunScanForTenant(ctx, acc.TenantID, acc.ID, acc.RoleARN, acc.ExternalID); err != nil {
 			log.Printf("Failed to scan account %s for tenant %s: %v", acc.RoleARN, acc.TenantID, err)
 			errs = append(errs, err)
 		}
@@ -253,7 +258,7 @@ func (o *Orchestrator) ScanAllForTenant(ctx context.Context, tenantID string) er
 
 	var errs []error
 	for _, acc := range accounts {
-		if err := o.RunScanForTenant(ctx, tenantID, acc.ID, acc.RoleARN); err != nil {
+		if err := o.RunScanForTenant(ctx, tenantID, acc.ID, acc.RoleARN, acc.ExternalID); err != nil {
 			log.Printf("Failed to scan account %s for tenant %s: %v", acc.RoleARN, tenantID, err)
 			errs = append(errs, err)
 		}
