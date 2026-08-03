@@ -450,8 +450,14 @@
     <div class="particles"></div>
     <div class="container hero-grid">
       <div class="hero-content">
-        <h1>Cloud Security Intelligence Platform</h1>
-        <p>Identify. Protect. Automate. Secure your AWS infrastructure with automated threat detection, cost optimization, and real-time monitoring.</p>
+        <!-- "Real-time monitoring" and "automated threat detection" were both
+             untrue: scans are scheduled, and nothing here detects threats. The
+             headline now says the one thing the product genuinely does, which is
+             also the thing a visitor cares about. -->
+        <h1>Find the AWS spend nobody is using</h1>
+        <p>Cloud Guard reads your account through a read-only role and reports what is costing
+           money for no reason — priced from AWS list prices, with the evidence and the command
+           that fixes it.</p>
         <div class="hero-btns">
           <a href="/signup" class="btn-primary">Get Started Free</a>
           <a href="#products" class="btn-outline">View Products</a>
@@ -551,12 +557,17 @@
           <div class="card-badge badge-live">🟢 AVAILABLE NOW</div>
           <h3>Cloud Guard</h3>
           <p style="color: var(--text-secondary); margin-bottom: 20px;">AWS Infrastructure Security</p>
+          <!-- The four priced rules go first. They are what actually puts a
+               dollar figure in front of someone, and they were missing from this
+               list entirely — the card advertised the weakest half of the
+               product and hid the part worth paying for. -->
           <ul class="feature-list">
-            <li>EC2 stopped/idle instance detection</li>
-            <li>S3 public bucket & policy scanner</li>
-            <li>RDS over-provisioned inspector</li>
-            <li>Cost Explorer integration</li>
-            <li>Slack alerting & reports</li>
+            <li>Unattached EBS volumes, priced per GiB</li>
+            <li>Idle Elastic IPs — billed precisely because they are unused</li>
+            <li>gp2 volumes that should be gp3, 20% cheaper</li>
+            <li>Snapshots past your retention window</li>
+            <li>Public S3 buckets, idle and over-provisioned instances</li>
+            <li>CSV export and a copyable fix command per finding</li>
           </ul>
           <a href="/signup" class="btn-primary" style="text-align: center; display: block;">Get Started &rarr;</a>
         </div>
