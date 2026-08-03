@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Anurag Kumar Singh</title>
+<meta name="description" content="Get in touch with Anurag Kumar Singh — backend engineer, Gurugram, India.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+main{padding-bottom:80px}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:44px}
+.link{display:flex;gap:16px;align-items:center;transition:border-color .3s}
+.link:hover{border-color:rgba(79,140,255,.45)}
+.link .ic{
+  width:46px;height:46px;flex:0 0 46px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,rgba(79,140,255,.2),rgba(34,211,238,.12));
+  border:1px solid rgba(79,140,255,.28);font-size:1.2rem;
+}
+.link .t{font-size:.72rem;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.link .v{font-weight:600;font-size:.98rem;word-break:break-all}
+
+.open{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:44px}
+@media(max-width:700px){.open{grid-template-columns:1fr}}
+.open h3{font-size:1.1rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:9px}
+.open p{color:var(--muted);font-size:.92rem}
+.dot-y{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 10px #22c55e}
+.dot-m{width:9px;height:9px;border-radius:50%;background:#f59e0b;box-shadow:0 0 10px #f59e0b}
+
+.cta{text-align:center;padding:48px 28px;
+  background:linear-gradient(135deg,rgba(79,140,255,.11),rgba(34,211,238,.05));
+  border:1px solid rgba(79,140,255,.24)}
+.cta h2{font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:700;letter-spacing:-.025em;margin-bottom:10px}
+.cta p{color:var(--muted);margin-bottom:26px}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#22c55e" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work">Work</a>
+      <a href="/journey">Journey</a>
+      <a href="/contact" class="on">Contact</a>
+      <a href="/products" class="hire">GuardInfra</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="kicker">Contact</div>
+    <h1>Let's talk.</h1>
+    <p>Fastest way to reach me is email. I read everything and reply to anything specific.</p>
+  </header>
+
+  <main class="wrap">
+
+    <div class="links">
+      <a href="mailto:anurag7979singh@gmail.com" class="card tilt link rv">
+        <div class="ic">✉️</div>
+        <div><div class="t">Email</div><div class="v">anurag7979singh@gmail.com</div></div>
+      </a>
+      <a href="tel:+917979765096" class="card tilt link rv">
+        <div class="ic">📱</div>
+        <div><div class="t">Phone</div><div class="v">+91 79797 65096</div></div>
+      </a>
+      <a href="https://www.linkedin.com/in/anuragsingh-7762811a3" target="_blank" rel="noopener noreferrer" class="card tilt link rv">
+        <div class="ic">in</div>
+        <div><div class="t">LinkedIn</div><div class="v">anuragsingh-7762811a3</div></div>
+      </a>
+      <a href="https://github.com/anurag-singh-code" target="_blank" rel="noopener noreferrer" class="card tilt link rv">
+        <div class="ic">⌥</div>
+        <div><div class="t">GitHub</div><div class="v">anurag-singh-code</div></div>
+      </a>
+      <div class="card tilt link rv">
+        <div class="ic">📍</div>
+        <div><div class="t">Based in</div><div class="v">Gurugram, India · IST (UTC+5:30)</div></div>
+      </div>
+    </div>
+
+    <div class="open">
+      <div class="card rv">
+        <h3><span class="dot-y"></span> Open to</h3>
+        <p>Senior backend roles — Go, Java, distributed systems. Full-time, hybrid or remote.
+           Happy to talk through any of the systems on the Work page in detail.</p>
+      </div>
+      <div class="card rv">
+        <h3><span class="dot-m"></span> Selectively taking</h3>
+        <p>Freelance backend work where the problem is interesting — event-driven architecture,
+           data pipelines, or cloud cost and infrastructure clean-up.</p>
+      </div>
+    </div>
+
+    <div class="card cta rv">
+      <h2>Have something that needs to scale?</h2>
+      <p>Tell me what breaks first and I'll tell you how I'd fix it.</p>
+      <a href="mailto:anurag7979singh@gmail.com?subject=Let%27s%20talk" class="btn btn-solid">✉️ Send me an email</a>
+    </div>
+
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 Anurag Kumar Singh · Gurugram, India</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>

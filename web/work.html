@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work — Anurag Kumar Singh</title>
+<meta name="description" content="GuardInfra products — Cloud Guard, Shield, Data Guard — plus client systems: Anota, DataInsight Engine, DQF, OnboardVerify, OpsDash.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;padding-bottom:70px}
+.proj{display:flex;flex-direction:column;min-height:100%}
+.proj-no{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.16em;
+  color:var(--accent-2);margin-bottom:12px;
+}
+.proj h3{font-size:1.35rem;font-weight:700;letter-spacing:-.025em;line-height:1.2}
+.proj .sub{color:var(--muted);font-size:.86rem;margin:5px 0 16px}
+.proj p{color:var(--muted);font-size:.93rem;flex:1}
+
+/* The number is the point of each card, so it gets its own block. */
+.metric{
+  margin:20px 0 0;padding:15px 17px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(79,140,255,.13),rgba(34,211,238,.06));
+  border:1px solid rgba(79,140,255,.22);
+}
+.metric b{display:block;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;
+  background:linear-gradient(120deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.metric span{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+.stack{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px;padding-top:15px;
+  border-top:1px solid var(--line)}
+.chip{font-family:'JetBrains Mono',monospace;font-size:.71rem;color:var(--ink);
+  background:rgba(255,255,255,.055);border:1px solid var(--line);
+  padding:3px 9px;border-radius:6px}
+
+.where{
+  display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--line);padding:3px 9px;border-radius:999px;margin-bottom:14px;
+}
+
+/* Group heading. Separating my own products from client work matters: a hiring
+   manager reads "I shipped this myself" very differently from "I was on the
+   team that shipped this", and blurring the two is how people get caught out
+   in an interview. */
+.group-t{
+  font-size:1.35rem;font-weight:700;letter-spacing:-.025em;margin-bottom:20px;
+  display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;
+}
+.group-t span{font-size:.86rem;font-weight:400;color:var(--muted);letter-spacing:0}
+
+.proj code{
+  font-family:'JetBrains Mono',monospace;font-size:.85em;
+  background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;color:var(--ink);
+}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#7c5cff" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work" class="on">Work</a>
+      <a href="/journey">Journey</a>
+      <a href="/contact">Contact</a>
+      <a href="/products" class="hire">GuardInfra</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="kicker">Selected work</div>
+    <h1>Products I own,<br>systems I shipped.</h1>
+    <p>Three products under GuardInfra, plus five systems built for clients.
+       The numbers below are the ones I was measured on.</p>
+  </header>
+
+  <main class="wrap">
+    <h2 class="group-t rv">GuardInfra <span>— my own products</span></h2>
+    <div class="grid">
+
+      <article class="card tilt proj rv" style="border-color:rgba(34,211,238,.32)">
+        <div class="tilt-in">
+          <div class="where">GuardInfra · Live</div>
+          <div class="proj-no">01 / Cloud cost &amp; security</div>
+          <h3>Cloud Guard</h3>
+          <div class="sub">AWS waste finder</div>
+          <p>Connects to an AWS account through a read-only IAM role and reports what is costing
+             money for no reason — unattached volumes, idle Elastic IPs, stale snapshots, gp2
+             volumes that should be gp3. Every finding is priced from AWS list prices and ships
+             with the CLI command that fixes it.</p>
+          <div class="metric" style="background:linear-gradient(135deg,rgba(34,211,238,.13),rgba(79,140,255,.06));border-color:rgba(34,211,238,.26)">
+            <b>Live right now</b>
+            <span>running on this server, scanning real accounts</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Go</span><span class="chip">AWS SDK v2</span>
+            <span class="chip">SQLite</span><span class="chip">Docker</span><span class="chip">Caddy</span>
+          </div>
+          <a href="/products/cloud-guard" class="btn btn-line" style="margin-top:18px;align-self:flex-start">How it works →</a>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv" style="border-color:rgba(167,139,250,.3)">
+        <div class="tilt-in">
+          <div class="where">GuardInfra · Open source</div>
+          <div class="proj-no">02 / API defence</div>
+          <h3>Shield</h3>
+          <div class="sub">Distributed rate limiter as a service</div>
+          <p>A rate-limiting service in Go that protects APIs from abuse, brute-force and
+             overload. Four algorithms — token bucket, leaky bucket, fixed window and sliding
+             log — configurable per API key and per endpoint, returning correct
+             <code>429</code>s with <code>X-RateLimit-*</code> headers.</p>
+          <div class="metric" style="background:linear-gradient(135deg,rgba(167,139,250,.13),rgba(79,140,255,.06));border-color:rgba(167,139,250,.24)">
+            <b>~55K req/s</b>
+            <span>token bucket, benchmarked locally</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Go</span><span class="chip">Gin</span>
+            <span class="chip">Redis</span><span class="chip">PostgreSQL</span>
+          </div>
+          <a href="/products/shield" class="btn btn-line" style="margin-top:18px;align-self:flex-start">How it works →</a>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv" style="border-color:rgba(245,158,11,.26)">
+        <div class="tilt-in">
+          <div class="where">GuardInfra · In design</div>
+          <div class="proj-no">03 / Data quality</div>
+          <h3>Data Guard</h3>
+          <div class="sub">Pipeline &amp; data quality monitoring</div>
+          <p>The next one. It will watch data pipelines the way Cloud Guard watches
+             infrastructure cost — schema drift, freshness, row-count anomalies — built on the
+             Spark and Iceberg work from DataInsight Engine.</p>
+          <div class="metric" style="background:linear-gradient(135deg,rgba(245,158,11,.11),rgba(79,140,255,.05));border-color:rgba(245,158,11,.22)">
+            <b>In design</b>
+            <span>not shipped — no demo to show yet</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Go</span><span class="chip">Spark</span><span class="chip">Iceberg</span>
+          </div>
+          <a href="/products/data-guard" class="btn btn-line" style="margin-top:18px;align-self:flex-start">The plan →</a>
+        </div>
+      </article>
+
+    </div>
+
+    <h2 class="group-t rv" style="margin-top:62px">Client work <span>— built at Digivate Labs &amp; Grid Infocom</span></h2>
+    <div class="grid">
+
+      <article class="card tilt proj rv">
+        <div class="tilt-in">
+          <div class="where">Digivate Labs</div>
+          <div class="proj-no">04 / Automation</div>
+          <h3>Anota</h3>
+          <div class="sub">No-Code Automation Platform</div>
+          <p>Led end-to-end development of an event-driven platform for workflow orchestration
+             using custom rules. Built IAM, Notifications (SMS, Email, In-App), Monitoring and
+             Proxy services. Shipped through GitHub Actions CI/CD on GCP.</p>
+          <div class="metric">
+            <b>1M+ tasks / month</b>
+            <span>at under 200ms response time</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Go</span><span class="chip">MongoDB</span>
+            <span class="chip">NSQ</span><span class="chip">GCP</span>
+            <span class="chip">GitHub Actions</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv">
+        <div class="tilt-in">
+          <div class="where">Digivate Labs</div>
+          <div class="proj-no">05 / Data</div>
+          <h3>DataInsight Engine</h3>
+          <div class="sub">Ingestion &amp; Visualisation Pipeline</div>
+          <p>Built a pipeline to ingest and visualise structured data. Apache Spark and Iceberg
+             handle processing, Superset the dashboards. Integrated document classification and
+             custom processing workers.</p>
+          <div class="metric">
+            <b>Spark + Iceberg</b>
+            <span>structured data at rest and in flight</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Python</span><span class="chip">Apache Spark</span>
+            <span class="chip">Iceberg</span><span class="chip">Superset</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv">
+        <div class="tilt-in">
+          <div class="where">Grid Infocom</div>
+          <div class="proj-no">06 / Verification</div>
+          <h3>DQF</h3>
+          <div class="sub">Driver License Verification System</div>
+          <p>Automated document verification through RESTful APIs and Excel file uploads.
+             RabbitMQ drives the async workflows; MongoDB and PostgreSQL hold the records.</p>
+          <div class="metric">
+            <b>100K+ verifications / month</b>
+            <span>processed in production</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Java</span><span class="chip">Spring Boot</span>
+            <span class="chip">RabbitMQ</span><span class="chip">MongoDB</span>
+            <span class="chip">PostgreSQL</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv">
+        <div class="tilt-in">
+          <div class="where">Grid Infocom</div>
+          <div class="proj-no">07 / Onboarding</div>
+          <h3>OnboardVerify</h3>
+          <div class="sub">Client Onboarding System</div>
+          <p>A variant of DQF tailored for broader onboarding scenarios, with enhanced validation
+             logic and workflow branching for clients whose processes did not fit the original
+             flow.</p>
+          <div class="metric">
+            <b>Branching workflows</b>
+            <span>per-client validation logic</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Java</span><span class="chip">RabbitMQ</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card tilt proj rv">
+        <div class="tilt-in">
+          <div class="where">Grid Infocom</div>
+          <div class="proj-no">08 / Observability</div>
+          <h3>OpsDash</h3>
+          <div class="sub">Realtime Monitoring Dashboard</div>
+          <p>Internal dashboard tracking task execution and system health, built on concurrent
+             goroutines with NSQ-based messaging so the view stayed current without polling
+             the database into the ground.</p>
+          <div class="metric">
+            <b>Realtime</b>
+            <span>task execution &amp; system health</span>
+          </div>
+          <div class="stack">
+            <span class="chip">Go</span><span class="chip">PostgreSQL</span>
+            <span class="chip">Goroutines</span><span class="chip">NSQ</span>
+          </div>
+        </div>
+      </article>
+
+      
+
+    </div>
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 Anurag Kumar Singh · Gurugram, India</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>

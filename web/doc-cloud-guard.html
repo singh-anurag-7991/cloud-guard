@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Guard — GuardInfra</title>
+<meta name="description" content="Cloud Guard documentation: how it connects to AWS, what it scans, how savings are priced.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+main{padding-bottom:80px}
+.hero-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}
+.p-ic{width:66px;height:66px;flex:0 0 66px;border-radius:18px;display:grid;place-items:center;
+  font-size:1.9rem;border:1px solid var(--line);
+  background:linear-gradient(135deg,rgba(79,140,255,.2),rgba(34,211,238,.09))}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px;margin-top:16px}
+.rule{padding:15px 17px;border-radius:12px;background:rgba(255,255,255,.03);
+  border:1px solid var(--line)}
+.rule b{display:block;font-size:.93rem;margin-bottom:4px}
+.rule span{color:var(--muted);font-size:.84rem}
+.rule .conf{display:inline-block;margin-top:8px;font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.conf-h{background:rgba(34,197,94,.15);color:#86efac}
+.conf-c{background:rgba(245,158,11,.14);color:#fcd34d}
+.sec{margin-bottom:56px}
+.sec-t{font-size:1.4rem;font-weight:700;letter-spacing:-.025em;margin-bottom:18px}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#22d3ee" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work">Work</a>
+      <a href="/products" class="on">GuardInfra</a>
+      <a href="/dashboard" class="hire">Dashboard →</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="crumb"><a href="/products">GuardInfra</a> / Cloud Guard</div>
+    <div class="hero-row">
+      <div class="p-ic">🛡️</div>
+      <div>
+        <h1 style="font-size:clamp(2rem,4.6vw,3rem)">Cloud Guard</h1>
+        <p style="margin-top:8px">Finds the AWS spend you forgot about — and hands you the
+           command that stops it.</p>
+        <span class="badge b-live" style="margin-top:12px">● Live — running now</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="sec">
+      <div class="doc-grid">
+        <div class="card tilt rv"><div class="tilt-in doc">
+          <h3>The problem</h3>
+          <p>Cloud waste is rarely dramatic. It is a 500 GiB volume left behind when someone
+             terminated an instance. An Elastic IP nobody released. Snapshots a backup script
+             created in 2024 and never cleaned up.</p>
+          <p>Individually invisible on a bill. Together, real money every month —
+             <b>forever</b>, because nothing in AWS will ever tell you to delete them.</p>
+
+          <h3 style="margin-top:26px">How it works</h3>
+          <ol class="flow">
+            <li><b>Launch the CloudFormation template</b>
+                <span>Creates a read-only role in your account. No access keys are ever shared
+                      with us.</span></li>
+            <li><b>Paste the role ARN back</b>
+                <span>We validate it by actually assuming the role, so a wrong ARN fails
+                      immediately instead of silently returning nothing.</span></li>
+            <li><b>Scan every enabled region</b>
+                <span>EC2, EBS, Elastic IPs, snapshots, RDS, S3 and Cost Explorer. Five regions
+                      at a time, so AWS does not throttle you.</span></li>
+            <li><b>Rules price each finding</b>
+                <span>Each attaches a dollar figure from published AWS list prices, the
+                      observation that triggered it, and a confidence level.</span></li>
+            <li><b>Act, or export</b>
+                <span>Copy the exact AWS CLI command from the dashboard, or pull the whole list
+                      as CSV to send to your team.</span></li>
+          </ol>
+        </div></div>
+
+        <div class="rv">
+          <div class="term">
+            <div class="term-bar"><i style="background:#ef4444"></i><i style="background:#f59e0b"></i><i style="background:#22c55e"></i></div>
+            <div class="term-body">
+<div class="c-dim">$ cloud-guard scan --account prod</div>
+<div class="c-ok">[OK]   AssumeRole → CloudGuardReadOnlyRole</div>
+<div class="c-acc">[SCAN] EC2 · EBS · RDS · S3 · Cost</div>
+<div class="c-dim">       across every enabled region</div>
+<div> </div>
+<div class="c-warn">[COST] vol-0ab4016b… 8 GiB gp2</div>
+<div class="c-dim">       unattached  <span class="c-ok">$0.80/mo</span>  high</div>
+<div class="c-warn">[COST] eipalloc-0677… Elastic IP</div>
+<div class="c-dim">       unassociated <span class="c-ok">$3.65/mo</span> high</div>
+<div class="c-warn">[COST] snap-01b4e3b4… 8 GiB</div>
+<div class="c-dim">       stale       <span class="c-ok">$0.40/mo</span>  check</div>
+<div> </div>
+<div class="c-ok">✓ every figure traced to a resource</div>
+            </div>
+          </div>
+
+          <div class="facts">
+            <div class="fact"><span>Access model</span><b>Read-only STS AssumeRole</b></div>
+            <div class="fact"><span>Credentials stored</span><b>None</b></div>
+            <div class="fact"><span>Checks</span><b>9 rules</b></div>
+            <div class="fact"><span>Pricing source</span><b>AWS us-east-1 list</b></div>
+            <div class="fact"><span>Stack</span><b>Go · SQLite · Docker</b></div>
+          </div>
+
+          <div class="prod-cta">
+            <a href="/dashboard" class="btn btn-solid">Open dashboard →</a>
+            <a href="/signup" class="btn btn-line">Create account</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t rv">What it checks</h2>
+      <div class="rules">
+        <div class="card rule rv">
+          <b>Unattached EBS volume</b>
+          <span>State is <span class="chip-code">available</span> — attached to no instance,
+                still billed every hour.</span>
+          <span class="conf conf-h">High confidence</span>
+        </div>
+        <div class="card rule rv">
+          <b>Unassociated Elastic IP</b>
+          <span>AWS charges $0.005/hour precisely because it is idle. Free once attached.</span>
+          <span class="conf conf-h">High confidence</span>
+        </div>
+        <div class="card rule rv">
+          <b>gp2 → gp3 migration</b>
+          <span>gp3 costs 20% less per GiB and includes 3000 IOPS free. Online change, no
+                downtime.</span>
+          <span class="conf conf-h">High confidence</span>
+        </div>
+        <div class="card rule rv">
+          <b>Stale snapshot</b>
+          <span>Older than 90 days. The fix command checks for a backing AMI first.</span>
+          <span class="conf conf-c">Check first</span>
+        </div>
+        <div class="card rule rv">
+          <b>Idle EC2 instance</b>
+          <span>Running, but under 5% max CPU across seven days of CloudWatch data.</span>
+          <span class="conf conf-c">Check first</span>
+        </div>
+        <div class="card rule rv">
+          <b>Stopped EC2 instance</b>
+          <span>Not billed for compute, but its root volume still is.</span>
+          <span class="conf conf-c">Check first</span>
+        </div>
+        <div class="card rule rv">
+          <b>Public S3 bucket</b>
+          <span>Public access block missing or policy grants public read.</span>
+          <span class="conf conf-c">Check first</span>
+        </div>
+        <div class="card rule rv">
+          <b>Over-provisioned RDS</b>
+          <span>Instance class larger than the observed workload needs.</span>
+          <span class="conf conf-c">Check first</span>
+        </div>
+        <div class="card rule rv">
+          <b>Cost summary</b>
+          <span>Week-over-week spend by service, from Cost Explorer.</span>
+          <span class="conf conf-h">Reported</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t rv">Why confidence levels</h2>
+      <div class="card rv"><div class="doc">
+        <p>An unattached volume is provably serving nothing — that is <b>high</b> confidence,
+           act on it. A 90-day-old snapshot might back an AMI or satisfy a retention policy —
+           that is <b>check first</b>, and the fix command runs the AMI lookup before the
+           delete.</p>
+        <p>The distinction exists because being wrong confidently costs far more trust than
+           being cautious. A tool that once told you to delete something you needed never gets
+           used again.</p>
+        <div class="honest">
+          <b>What it does not do yet:</b> savings are estimated from on-demand list prices.
+          Savings Plans, Reserved Instances and volume discounts are not modelled, so your real
+          saving may be lower. That caveat sits next to every figure inside the product too.
+        </div>
+      </div></div>
+    </section>
+
+    <div class="card access rv" style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:34px;background:linear-gradient(135deg,rgba(79,140,255,.11),rgba(34,211,238,.05));border-color:rgba(79,140,255,.24)">
+      <div>
+        <h2 style="font-size:1.4rem;font-weight:700;letter-spacing:-.025em;margin-bottom:8px">Ready to scan your account?</h2>
+        <p style="color:var(--muted);font-size:.93rem">Read-only role, about two minutes to connect.</p>
+      </div>
+      <div class="prod-cta" style="margin:0">
+        <a href="/dashboard" class="btn btn-solid">Open dashboard →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 GuardInfra · Built by Anurag Kumar Singh</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>

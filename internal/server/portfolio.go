@@ -107,14 +107,50 @@ func (s *Server) handlePortfolio(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	s.renderPortfolioPage(w, r, "home.html", "/")
+}
 
+// handleWork, handleJourney and handleContact are the remaining portfolio pages.
+//
+// Four pages rather than one long scroll: a hiring manager who wants the project
+// list should be able to land on it directly and send that URL to someone else,
+// which a single-page site with #anchors does badly.
+func (s *Server) handleWork(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "work.html", "/work")
+}
+
+func (s *Server) handleJourney(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "journey.html", "/journey")
+}
+
+func (s *Server) handleContact(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "contact.html", "/contact")
+}
+
+// Product documentation pages. Public on purpose: a prospect should be able to
+// read exactly what a product does and how it works before creating an account.
+// Gating docs behind a signup wall just means they never sign up.
+func (s *Server) handleDocCloudGuard(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "doc-cloud-guard.html", "/products/cloud-guard")
+}
+
+func (s *Server) handleDocShield(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "doc-shield.html", "/products/shield")
+}
+
+func (s *Server) handleDocDataGuard(w http.ResponseWriter, r *http.Request) {
+	s.renderPortfolioPage(w, r, "doc-data-guard.html", "/products/data-guard")
+}
+
+// renderPortfolioPage counts the visit and renders one of the portfolio pages.
+// Every page shows the same footer counter, so they all need the same data.
+func (s *Server) renderPortfolioPage(w http.ResponseWriter, r *http.Request, tmpl, path string) {
 	data := portfolioData{
 		Products: products(),
-		Visitors: s.countVisit(r, "/"),
+		Visitors: s.countVisit(r, path),
 		PhotoURL: "/static/anurag-520.jpg",
 	}
-
-	s.renderTemplate(w, "portfolio.html", data)
+	s.renderTemplate(w, tmpl, data)
 }
 
 // handleCloudGuardMarketing serves the old landing page, now reachable from the

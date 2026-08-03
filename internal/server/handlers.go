@@ -44,18 +44,13 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 // Products Page (HTML) — Deep-dive into Guard Platform products
 // ──────────────────────────────────────────────────────────────
 
+// handleProducts serves the GuardInfra platform page — what each product does
+// and how it works, in documentation form.
 func (s *Server) handleProducts(w http.ResponseWriter, r *http.Request) {
-	s.renderTemplate(w, "products.html", nil)
+	s.renderPortfolioPage(w, r, "products.html", "/products")
 }
 
-// ──────────────────────────────────────────────────────────────
-// About Page (HTML) — Engineer portfolio & contact
-// ──────────────────────────────────────────────────────────────
-
-func (s *Server) handleAbout(w http.ResponseWriter, r *http.Request) {
-	s.renderTemplate(w, "about.html", nil)
-}
-
+// The old /about page is superseded by /journey; routes.go redirects it.
 // ──────────────────────────────────────────────────────────────
 // Dashboard (HTML) — serves the main page with findings
 // ──────────────────────────────────────────────────────────────

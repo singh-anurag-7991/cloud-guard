@@ -20,9 +20,21 @@ func (s *Server) registerRoutes() {
 	// "/" is the personal portfolio; the Cloud Guard marketing page moved to
 	// /cloud-guard and is reached from the portfolio's products box.
 	s.Router.HandleFunc("GET /", s.handlePortfolio)
-	s.Router.HandleFunc("GET /cloud-guard", s.handleCloudGuardMarketing)
+	s.Router.HandleFunc("GET /work", s.handleWork)
+	s.Router.HandleFunc("GET /journey", s.handleJourney)
+	s.Router.HandleFunc("GET /contact", s.handleContact)
+	// GuardInfra: the platform overview, then one documentation page per
+	// product. Each product page is the route into that product's dashboard.
 	s.Router.HandleFunc("GET /products", s.handleProducts)
-	s.Router.HandleFunc("GET /about", s.handleAbout)
+	s.Router.HandleFunc("GET /products/cloud-guard", s.handleDocCloudGuard)
+	s.Router.HandleFunc("GET /products/shield", s.handleDocShield)
+	s.Router.HandleFunc("GET /products/data-guard", s.handleDocDataGuard)
+	s.Router.HandleFunc("GET /cloud-guard", s.handleCloudGuardMarketing)
+	// /about predates the portfolio and its content now lives on /journey.
+	// Redirecting rather than deleting keeps any link already shared working.
+	s.Router.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/journey", http.StatusMovedPermanently)
+	})
 
 	// Static assets (portrait, any future images).
 	// max-age=86400 rather than immutable: the filename is not content-hashed,

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Guard — GuardInfra</title>
+<meta name="description" content="Data Guard: pipeline and data quality monitoring. In design — schema drift, freshness, row-count anomalies.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+main{padding-bottom:80px}
+.hero-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.p-ic{width:66px;height:66px;flex:0 0 66px;border-radius:18px;display:grid;place-items:center;
+  font-size:1.9rem;border:1px solid var(--line);
+  background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(79,140,255,.08))}
+.sec{margin-bottom:56px}
+.sec-t{font-size:1.4rem;font-weight:700;letter-spacing:-.025em;margin-bottom:18px}
+
+/* A visible "this is not built" banner. Anyone who lands here from a search
+   result should learn that in the first second, not after reading a feature
+   list that sounds shipped. */
+.notyet{
+  padding:22px 26px;margin-bottom:40px;border-radius:16px;
+  background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.28);
+}
+.notyet b{color:#fcd34d;display:block;margin-bottom:5px;font-size:1.02rem}
+.notyet p{color:var(--muted);font-size:.92rem}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#f59e0b" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work">Work</a>
+      <a href="/products" class="on">GuardInfra</a>
+      <a href="/products/cloud-guard" class="hire">Try Cloud Guard →</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="crumb"><a href="/products">GuardInfra</a> / Data Guard</div>
+    <div class="hero-row">
+      <div class="p-ic">📊</div>
+      <div>
+        <h1 style="font-size:clamp(2rem,4.6vw,3rem)">Data Guard</h1>
+        <p style="margin-top:8px">Catches bad data before a dashboard turns it into a bad
+           decision.</p>
+        <span class="badge b-soon" style="margin-top:12px">Coming soon — in design</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <div class="notyet rv">
+      <b>Nothing to try yet.</b>
+      <p>This page describes the design, not a product. There is no demo, no signup and no
+         waitlist. When it runs, this page will say so and the button will work.</p>
+    </div>
+
+    <section class="sec">
+      <div class="doc-grid">
+        <div class="card tilt rv"><div class="tilt-in doc">
+          <h3>The problem</h3>
+          <p>Pipelines rarely fail loudly. A column changes type upstream. A job silently stops
+             at 3am. A join starts dropping 12% of rows.</p>
+          <p>Nothing errors. The dashboard keeps rendering. People keep making decisions from it
+             — for a week, until somebody notices a number looks off and the whole team spends
+             two days working out how far back the damage goes.</p>
+          <p>The failures that cost the most are the ones that <b>look like success</b>.</p>
+
+          <h3 style="margin-top:26px">What it will watch</h3>
+          <ol class="flow">
+            <li><b>Schema drift</b>
+                <span>A column added, removed or retyped upstream — caught before it breaks the
+                      job downstream.</span></li>
+            <li><b>Freshness</b>
+                <span>The table that should update hourly and last updated eleven hours ago.</span></li>
+            <li><b>Row-count anomalies</b>
+                <span>A load that normally brings 2M rows and quietly brought 240K.</span></li>
+            <li><b>Null and distribution shifts</b>
+                <span>A field that was 2% null yesterday and is 60% null today.</span></li>
+          </ol>
+
+          <h3 style="margin-top:26px">Why this, and why now</h3>
+          <p>It builds directly on the Spark and Iceberg work behind the DataInsight Engine, and
+             reuses Cloud Guard's model of a finding: the observation, the severity, and
+             something specific you can do about it. Same idea, different layer of the stack.</p>
+        </div></div>
+
+        <div class="rv">
+          <div class="term">
+            <div class="term-bar"><i style="background:#ef4444"></i><i style="background:#f59e0b"></i><i style="background:#22c55e"></i></div>
+            <div class="term-body">
+<div class="c-dim">$ data-guard check --table orders</div>
+<div class="c-warn">  // planned output, not live</div>
+<div> </div>
+<div class="c-warn">[DRIFT]  orders.customer_tier</div>
+<div class="c-dim">         int → string (upstream)</div>
+<div class="c-warn">[STALE]  orders last loaded 11h ago</div>
+<div class="c-dim">         expected hourly</div>
+<div class="c-warn">[VOLUME] 240K rows</div>
+<div class="c-dim">         30d median 2.1M · −88%</div>
+<div class="c-warn">[NULLS]  orders.promo_code</div>
+<div class="c-dim">         2% → 61% null</div>
+<div> </div>
+<div class="c-dim">✗ 4 issues · 1 blocking</div>
+            </div>
+          </div>
+
+          <div class="facts">
+            <div class="fact"><span>Status</span><b>Design</b></div>
+            <div class="fact"><span>Planned stack</span><b>Go · Spark · Iceberg</b></div>
+            <div class="fact"><span>Shares with Cloud Guard</span><b>Finding model</b></div>
+            <div class="fact"><span>Available</span><b>Not yet</b></div>
+          </div>
+
+          <div class="prod-cta">
+            <a href="/products/cloud-guard" class="btn btn-line">Cloud Guard is live →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 GuardInfra · Built by Anurag Kumar Singh</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journey — Anurag Kumar Singh</title>
+<meta name="description" content="4+ years backend engineering across Grid Infocom and Digivate Labs. Go, Java, Python, distributed systems.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+main{padding-bottom:70px}
+.sec{margin-bottom:64px}
+.sec-t{font-size:1.5rem;font-weight:700;letter-spacing:-.025em;margin-bottom:24px}
+
+/* Timeline */
+.tl{position:relative;padding-left:34px}
+.tl::before{content:'';position:absolute;left:7px;top:10px;bottom:10px;width:2px;
+  background:linear-gradient(var(--accent),var(--accent-2),transparent)}
+.tl-item{position:relative;margin-bottom:30px}
+.tl-item::before{
+  content:'';position:absolute;left:-34px;top:20px;width:16px;height:16px;border-radius:50%;
+  background:var(--bg);border:2px solid var(--accent);
+  box-shadow:0 0 16px rgba(79,140,255,.55);
+}
+.tl-co{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.tl-co h3{font-size:1.25rem;font-weight:700;letter-spacing:-.02em}
+.tl-when{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent-2)}
+.tl-role{color:var(--muted);font-size:.92rem;margin-bottom:16px}
+.tl-list{list-style:none;display:grid;gap:9px}
+.tl-list li{color:var(--muted);font-size:.92rem;padding-left:20px;position:relative}
+.tl-list li::before{content:'▸';position:absolute;left:0;color:var(--accent)}
+.tl-list b{color:var(--ink);font-weight:600}
+
+/* Skills */
+.skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.sk h4{font-size:.74rem;text-transform:uppercase;letter-spacing:.13em;
+  color:var(--accent-2);margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:.75rem;
+  background:rgba(255,255,255,.055);border:1px solid var(--line);
+  padding:5px 11px;border-radius:7px}
+
+/* Education */
+.edu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.edu{text-align:center}
+.edu b{display:block;font-size:1.02rem;font-weight:600;margin-bottom:3px}
+.edu span{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#22d3ee" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work">Work</a>
+      <a href="/journey" class="on">Journey</a>
+      <a href="/contact">Contact</a>
+      <a href="/products" class="hire">GuardInfra</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="kicker">Journey</div>
+    <h1>Four years,<br>two teams.</h1>
+    <p>Started in Java and message queues, moved to Go and event-driven systems.
+       The through-line has been backend that has to keep working.</p>
+  </header>
+
+  <main class="wrap">
+
+    <section class="sec">
+      <h2 class="sec-t">Experience</h2>
+      <div class="tl">
+
+        <div class="tl-item rv">
+          <div class="card tilt"><div class="tilt-in">
+            <div class="tl-co">
+              <h3>Digivate Labs</h3>
+              <span class="tl-when">Mar 2024 — Present</span>
+            </div>
+            <div class="tl-role">Backend Engineer · Go, Python</div>
+            <ul class="tl-list">
+              <li>Led end-to-end development of <b>Anota</b>, an event-driven no-code automation
+                  platform — IAM, Notifications, Monitoring and Proxy services.</li>
+              <li>Scaled it to <b>1M+ monthly tasks</b> at <b>under 200ms</b> response time.</li>
+              <li>Shipped through GitHub Actions CI/CD on GCP.</li>
+              <li>Built the <b>DataInsight Engine</b> — Spark and Iceberg for processing,
+                  Superset for dashboards, with document classification workers.</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <div class="tl-item rv">
+          <div class="card tilt"><div class="tilt-in">
+            <div class="tl-co">
+              <h3>Grid Infocom</h3>
+              <span class="tl-when">Sep 2021 — Feb 2024</span>
+            </div>
+            <div class="tl-role">Backend Engineer · Java, Go</div>
+            <ul class="tl-list">
+              <li>Built <b>DQF</b>, a driver-license verification system on Spring Boot and
+                  RabbitMQ handling <b>100K+ verifications a month</b>.</li>
+              <li>Extended it into <b>OnboardVerify</b> for broader client onboarding, with
+                  workflow branching and per-client validation.</li>
+              <li>Wrote <b>OpsDash</b> in Go — a realtime monitoring dashboard on goroutines
+                  and NSQ messaging.</li>
+            </ul>
+          </div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t">Toolkit</h2>
+      <div class="skill-grid">
+        <div class="card sk rv"><h4>Languages</h4><div class="chips">
+          <span class="chip">Go</span><span class="chip">Java</span><span class="chip">Python</span>
+          <span class="chip">SQL</span><span class="chip">Bash</span></div></div>
+
+        <div class="card sk rv"><h4>Frameworks</h4><div class="chips">
+          <span class="chip">Spring Boot</span><span class="chip">Gin</span><span class="chip">Maven</span>
+          <span class="chip">JDBC</span><span class="chip">JPA</span><span class="chip">Hibernate</span></div></div>
+
+        <div class="card sk rv"><h4>Data Platforms</h4><div class="chips">
+          <span class="chip">PostgreSQL</span><span class="chip">MongoDB</span><span class="chip">MySQL</span>
+          <span class="chip">Apache Spark</span><span class="chip">Iceberg</span></div></div>
+
+        <div class="card sk rv"><h4>Cloud &amp; CI/CD</h4><div class="chips">
+          <span class="chip">GCP</span><span class="chip">Azure</span><span class="chip">Docker</span>
+          <span class="chip">Kubernetes</span><span class="chip">GitHub Actions</span><span class="chip">Jenkins</span></div></div>
+
+        <div class="card sk rv"><h4>Messaging</h4><div class="chips">
+          <span class="chip">RabbitMQ</span><span class="chip">NSQ</span><span class="chip">Kafka</span></div></div>
+
+        <div class="card sk rv"><h4>Monitoring &amp; Infra</h4><div class="chips">
+          <span class="chip">Superset</span><span class="chip">Prometheus</span>
+          <span class="chip">Grafana</span><span class="chip">REST APIs</span></div></div>
+
+        <div class="card sk rv"><h4>Concepts</h4><div class="chips">
+          <span class="chip">System Design</span><span class="chip">DSA</span>
+          <span class="chip">Microservices</span><span class="chip">Event-Driven</span>
+          <span class="chip">IAM</span><span class="chip">Rule Engines</span></div></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t">Education &amp; certifications</h2>
+      <div class="edu-grid">
+        <div class="card edu rv"><b>MCA</b><span>2020 — 2022</span></div>
+        <div class="card edu rv"><b>BCA</b><span>2015 — 2018</span></div>
+        <div class="card edu rv"><b>GCP Associate Cloud Engineer</b><span>Google Cloud</span></div>
+        <div class="card edu rv"><b>Azure AZ-900</b><span>Microsoft</span></div>
+        <div class="card edu rv"><b>Databricks Lakehouse</b><span>Databricks</span></div>
+        <div class="card edu rv"><b>MongoDB for Developers</b><span>MongoDB</span></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 Anurag Kumar Singh · Gurugram, India</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>

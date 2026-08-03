@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shield — GuardInfra</title>
+<meta name="description" content="Shield documentation: a Go rate limiter with token bucket, leaky bucket, fixed window and sliding log.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<style>
+main{padding-bottom:80px}
+.hero-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.p-ic{width:66px;height:66px;flex:0 0 66px;border-radius:18px;display:grid;place-items:center;
+  font-size:1.9rem;border:1px solid var(--line);
+  background:linear-gradient(135deg,rgba(167,139,250,.22),rgba(79,140,255,.1))}
+.sec{margin-bottom:56px}
+.sec-t{font-size:1.4rem;font-weight:700;letter-spacing:-.025em;margin-bottom:18px}
+.algo{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px}
+.algo h4{font-size:1.02rem;font-weight:700;margin-bottom:6px}
+.algo p{color:var(--muted);font-size:.87rem;margin-bottom:10px}
+.algo .use{font-size:.8rem;padding:9px 12px;border-radius:9px;
+  background:rgba(79,140,255,.09);border:1px solid rgba(79,140,255,.2);color:var(--ink)}
+.algo .use b{color:var(--accent-2)}
+</style>
+</head>
+<body>
+<div id="scene" data-accent="#a78bfa" data-accent2="#4f8cff"></div>
+
+<div class="page">
+  <nav class="nav"><div class="wrap nav-in">
+    <a href="/" class="sig"><span class="sig-mark">AS</span> Anurag Singh</a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/work">Work</a>
+      <a href="/products" class="on">GuardInfra</a>
+      <a href="https://github.com/singh-anurag-7991/shield" target="_blank" rel="noopener noreferrer" class="hire">GitHub ↗</a>
+    </div>
+  </div></nav>
+
+  <header class="wrap phead">
+    <div class="crumb"><a href="/products">GuardInfra</a> / Shield</div>
+    <div class="hero-row">
+      <div class="p-ic">⚔️</div>
+      <div>
+        <h1 style="font-size:clamp(2rem,4.6vw,3rem)">Shield</h1>
+        <p style="margin-top:8px">Rate limiting that holds when someone hammers your API.</p>
+        <span class="badge b-oss" style="margin-top:12px">Open source</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="sec">
+      <div class="doc-grid">
+        <div class="card tilt rv"><div class="tilt-in doc">
+          <h3>The problem</h3>
+          <p>Every public API eventually meets a client with a retry loop and no backoff, a
+             credential-stuffing script, or one customer who accidentally sends 40× their normal
+             traffic on a Tuesday morning.</p>
+          <p>Without a limiter, a single caller degrades the service for <b>everyone else</b>.
+             The database saturates, latency climbs, and the incident looks like a capacity
+             problem when it was really one bad client.</p>
+
+          <h3 style="margin-top:26px">What Shield does</h3>
+          <p>Shield sits in front of your API and decides, per API key and per endpoint, whether
+             a request gets served or gets a <code>429</code>. State lives in memory for a single
+             instance, or in Redis when you run more than one.</p>
+
+          <h3 style="margin-top:26px">Correct by default</h3>
+          <p>Returns proper <code>429</code> responses with <code>X-RateLimit-Limit</code>,
+             <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code> headers — so a
+             well-behaved client can back off on schedule instead of guessing and retrying
+             straight into the same wall.</p>
+        </div></div>
+
+        <div class="rv">
+          <div class="term">
+            <div class="term-bar"><i style="background:#ef4444"></i><i style="background:#f59e0b"></i><i style="background:#22c55e"></i></div>
+            <div class="term-body">
+<div class="c-dim">$ for i in {1..20}; do</div>
+<div class="c-dim">    curl -s localhost:8080/api/test</div>
+<div class="c-dim">  done</div>
+<div> </div>
+<div class="c-ok">HTTP/1.1 200 OK</div>
+<div class="c-dim">X-RateLimit-Limit: 10</div>
+<div class="c-dim">X-RateLimit-Remaining: 9</div>
+<div> </div>
+<div class="c-warn">HTTP/1.1 429 Too Many Requests</div>
+<div class="c-dim">X-RateLimit-Limit: 10</div>
+<div class="c-dim">X-RateLimit-Remaining: 0</div>
+<div class="c-dim">X-RateLimit-Reset: 1735689201</div>
+            </div>
+          </div>
+
+          <div class="facts">
+            <div class="fact"><span>Token bucket</span><b>~55K req/s</b></div>
+            <div class="fact"><span>Leaky bucket</span><b>~52K req/s</b></div>
+            <div class="fact"><span>Sliding log</span><b>~45K req/s</b></div>
+            <div class="fact"><span>Memory @ 10K keys</span><b>20–35 MB</b></div>
+            <div class="fact"><span>Stack</span><b>Go · Gin · Redis</b></div>
+          </div>
+
+          <div class="honest">
+            <b>Where it actually is:</b> the benchmarks above were measured locally, not on a
+            production cluster. Distributed Redis state, the PostgreSQL rule engine and the gRPC
+            API are on the roadmap, not shipped.
+          </div>
+
+          <div class="prod-cta">
+            <a href="https://github.com/singh-anurag-7991/shield" target="_blank" rel="noopener noreferrer" class="btn btn-solid">⌥ View on GitHub</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t rv">Four algorithms, and when to reach for each</h2>
+      <div class="algo">
+        <div class="card tilt rv"><div class="tilt-in">
+          <h4>Token bucket</h4>
+          <p>Refills at a fixed rate and allows short bursts up to the bucket size.</p>
+          <div class="use"><b>Use when:</b> traffic is naturally bursty — which is nearly always.
+            This is the default.</div>
+        </div></div>
+        <div class="card tilt rv"><div class="tilt-in">
+          <h4>Leaky bucket</h4>
+          <p>Drains at a constant rate regardless of how requests arrive.</p>
+          <div class="use"><b>Use when:</b> the thing behind the API cannot absorb bursts at all —
+            a downstream with fixed throughput.</div>
+        </div></div>
+        <div class="card tilt rv"><div class="tilt-in">
+          <h4>Fixed window</h4>
+          <p>Counts per clock window. Cheapest to compute, but allows up to double the limit
+             across a window boundary.</p>
+          <div class="use"><b>Use when:</b> the limit is generous and the boundary edge case
+            does not matter.</div>
+        </div></div>
+        <div class="card tilt rv"><div class="tilt-in">
+          <h4>Sliding log</h4>
+          <p>Keeps a timestamp per request per key. Most accurate, most memory.</p>
+          <div class="use"><b>Use when:</b> the boundary loophole is exploitable and precision
+            is worth the RAM.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="sec-t rv">Quick start</h2>
+      <div class="card rv">
+        <div class="term" style="border:0">
+          <div class="term-body">
+<div class="c-dim">$ git clone https://github.com/singh-anurag-7991/shield.git</div>
+<div class="c-dim">$ cd shield</div>
+<div class="c-dim">$ go mod tidy</div>
+<div class="c-dim">$ go run cmd/server/main.go</div>
+<div> </div>
+<div class="c-ok">Server listening on :8080</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot"><div class="wrap foot-in">
+    <div>© 2026 GuardInfra · Built by Anurag Kumar Singh</div>
+    <div class="mono"><b>{{.Visitors.Total}}</b> visits · <b>{{.Visitors.Last30d}}</b> in 30d · <b>{{.Visitors.Today}}</b> today</div>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/scene.js"></script>
+</body>
+</html>
