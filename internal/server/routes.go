@@ -57,6 +57,14 @@ func (s *Server) registerRoutes() {
 	s.Router.Handle("POST /scan", protect(s.handleScan))
 	s.Router.Handle("GET /findings.csv", protect(s.handleExportCSV))
 
+	// ── Auth API for the Next.js front end ─────────────────────
+	// Public by design: these are how a session begins. They share the same
+	// users, sessions and tenant isolation as the HTML handlers above.
+	s.Router.HandleFunc("POST /api/auth/login", s.handleAPILogin)
+	s.Router.HandleFunc("POST /api/auth/signup", s.handleAPISignup)
+	s.Router.HandleFunc("POST /api/auth/logout", s.handleAPILogout)
+	s.Router.HandleFunc("GET /api/auth/session", s.handleAPISession)
+
 	// ── JSON APIs (Protected) ──────────────────────────────────
 	s.Router.Handle("GET /api/findings", protect(s.handleAPIFindings))
 	s.Router.Handle("GET /api/accounts", protect(s.handleAPIAccounts))

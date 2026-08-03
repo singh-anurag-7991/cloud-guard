@@ -105,6 +105,26 @@ func (db *DB) GetUserByEmail(email string) (*User, error) {
 	return u, nil
 }
 
+// GetUserByID looks a user up from a session.
+//
+// LookupSession returns the user ID, not the email, so the session endpoint
+// needs this to tell the front end who is signed in. The password hash is
+// deliberately not selected — nothing downstream of a session check has any
+// business holding it.
+func (db *DB) GetUserByID(id int64) (*User, error) {
+	u := &User{}
+	err := db.conn.QueryRow(
+		`SELECT id, email, tenant_id FROM users WHERE id = ?`, id,
+	).Scan(&u.ID, &u.Email, &u.TenantID)
+	if err == sql.ErrNoRows {
+		return nil, ErrNoUser
+	}
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 // CountUsers reports how many accounts exist (used to show first-run hints).
 func (db *DB) CountUsers() (int, error) {
 	var n int
