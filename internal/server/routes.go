@@ -38,6 +38,13 @@ func (s *Server) registerRoutes() {
 	s.Router.HandleFunc("POST /signup", s.handleSignupSubmit)
 	s.Router.HandleFunc("POST /logout", s.handleLogout)
 
+	// Password reset. Public by necessity — someone locked out cannot be asked
+	// to sign in first.
+	s.Router.HandleFunc("GET /forgot-password", s.handleForgotPasswordPage)
+	s.Router.HandleFunc("POST /forgot-password", s.handleForgotPasswordSubmit)
+	s.Router.HandleFunc("GET /reset-password", s.handleResetPasswordPage)
+	s.Router.HandleFunc("POST /reset-password", s.handleResetPasswordSubmit)
+
 	// Protected HTML routes
 	s.Router.Handle("GET /dashboard", protect(s.handleDashboard))
 	s.Router.Handle("POST /connect", protect(s.handleConnect))

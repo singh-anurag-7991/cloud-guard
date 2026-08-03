@@ -26,6 +26,12 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("registered") == "1" {
 		data.Success = "Account created. Please sign in."
 	}
+	// Confirms the reset actually took effect. Without it, someone who just set
+	// a new password lands on a bare login form and cannot tell whether it
+	// worked until they try — and if they mistype, they blame the reset.
+	if r.URL.Query().Get("reset") == "1" {
+		data.Success = "Password changed. Sign in with your new password — any other devices have been signed out."
+	}
 	s.renderTemplate(w, "login.html", data)
 }
 

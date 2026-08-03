@@ -135,6 +135,10 @@ func (db *DB) migrate() error {
 		return err
 	}
 
+	if err := db.migratePasswordResets(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
