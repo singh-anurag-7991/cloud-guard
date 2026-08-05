@@ -11,14 +11,25 @@ import (
 )
 
 // Product is one entry in the portfolio's products box.
+//
+// Badge and CTA are carried per product rather than derived from Status,
+// because the three products are reachable in genuinely different ways: one is
+// a deployed service you can sign into, two are repositories you can read.
+// Labelling a repository "Live" would imply a hosted app that does not exist.
 type Product struct {
 	Name        string
 	Tagline     string
 	Description string
 	Stack       string
-	Status      string // "live" | "soon"
+	Status      string // "live" | "oss" — drives the card's accent only
+	Badge       string // text inside the pill
+	PillClass   string
+	CTA         string
 	URL         string
 	Icon        string
+	// External sends the link to a new tab. A recruiter who clicks through to
+	// GitHub should still have the portfolio open behind them.
+	External bool
 }
 
 // products is the single source of truth for what is shown on the portfolio,
@@ -32,20 +43,41 @@ func products() []Product {
 			Description: "Connects to an AWS account through a read-only IAM role and reports what is costing money for no reason — unattached EBS volumes, idle Elastic IPs, stale snapshots, gp2 volumes that should be gp3. Every finding is priced from AWS list prices and comes with the exact CLI command to fix it.",
 			Stack:       "Go · SQLite · AWS SDK v2 · Docker · Caddy",
 			Status:      "live",
-			URL:         "/login",
-			Icon:        "🛡️",
+			Badge:       "● Live",
+			PillClass:   "pill-live",
+			CTA:         "Open Cloud Guard →",
+			// The product page, not the login form. Someone arriving from a CV
+			// wants to know what this is before being asked for a password.
+			URL:  "/cloud-guard",
+			Icon: "🛡️",
 		},
 		{
-			Name:        "Data Guard",
-			Tagline:     "Data quality and pipeline monitoring",
-			Description: "In design. It will watch data pipelines the way Cloud Guard watches infrastructure cost — schema drift, freshness, row-count anomalies.",
-			Stack:       "Planned: Go · Spark · Iceberg",
-			// Marked "soon" rather than shipped with a broken UI. A product box
-			// that opens onto something non-functional is worse than an honest
-			// placeholder - the visitor concludes the working product is fake too.
-			Status: "soon",
-			URL:    "/products",
-			Icon:   "📊",
+			Name:    "Data Guard",
+			Tagline: "A firewall for bad data",
+			// This card said "in design" for weeks while the repository was
+			// finished. Description now matches what is actually in it.
+			Description: "Validates API payloads and SQL rows against declarative rules, pushing the checks down into SQL instead of pulling every row back. Alerts only when a check flips state, so the channel stays readable. Catches silent data failures before downstream logic acts on them.",
+			Stack:       "Go · PostgreSQL · Next.js",
+			Status:      "oss",
+			Badge:       "Open source",
+			PillClass:   "pill-oss",
+			CTA:         "View on GitHub →",
+			URL:         "https://github.com/singh-anurag-7991/data-guard",
+			Icon:        "📊",
+			External:    true,
+		},
+		{
+			Name:        "Shield",
+			Tagline:     "Rate limiting that holds under load",
+			Description: "A Go rate limiter for APIs, with sliding-window and token-bucket strategies over either Redis or an in-memory store. Built to make the enforcement decision cheap enough to sit in the request path.",
+			Stack:       "Go · Redis",
+			Status:      "oss",
+			Badge:       "Open source",
+			PillClass:   "pill-oss",
+			CTA:         "View on GitHub →",
+			URL:         "https://github.com/singh-anurag-7991/shield",
+			Icon:        "🧱",
+			External:    true,
 		},
 	}
 }
