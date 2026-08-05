@@ -46,6 +46,12 @@ func (s *Server) registerRoutes() {
 	s.Router.HandleFunc("POST /reset-password", s.handleResetPasswordSubmit)
 
 	// Protected HTML routes
+	//
+	// /hub is the signed-in front door: the product list, then one doc page per
+	// product, and only then the product's own UI. Signing in used to drop you
+	// straight into Cloud Guard's dashboard.
+	s.Router.Handle("GET /hub", protect(s.handleHub))
+	s.Router.Handle("GET /hub/{slug}", protect(s.handleProductDoc))
 	s.Router.Handle("GET /dashboard", protect(s.handleDashboard))
 	s.Router.Handle("POST /connect", protect(s.handleConnect))
 	s.Router.Handle("POST /disconnect", protect(s.handleDisconnect))

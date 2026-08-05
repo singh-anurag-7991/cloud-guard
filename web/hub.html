@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your products | Guard Infra</title>
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f; --bg-2:#0c1018; --card:#11161f; --card-hover:#161c27;
+  --border:rgba(255,255,255,.08);
+  --text:#e8edf5; --muted:#8b97ab;
+  --blue:#3b82f6; --cyan:#22d3ee; --green:#22c55e; --purple:#a78bfa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);
+     color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
+a{color:inherit}
+
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(7,9,15,.72);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-weight:700;font-size:1.05rem;letter-spacing:-.02em;text-decoration:none;
+       display:flex;gap:10px;align-items:center}
+.brand img{width:28px;height:28px;display:block}
+.nav-right{display:flex;gap:18px;align-items:center;font-size:.9rem;color:var(--muted)}
+.nav-right a{text-decoration:none;transition:color .2s}
+.nav-right a:hover{color:var(--text)}
+.logout{background:none;border:1px solid var(--border);color:var(--muted);
+        padding:7px 14px;border-radius:8px;font:inherit;font-size:.86rem;cursor:pointer}
+.logout:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
+header{padding:56px 0 36px}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--blue);
+        text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px}
+h1{font-size:clamp(1.8rem,4vw,2.4rem);font-weight:700;letter-spacing:-.03em}
+header p{color:var(--muted);margin-top:10px;max-width:62ch}
+
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+          gap:20px;padding-bottom:80px}
+.product{background:var(--card);border:1px solid var(--border);border-radius:16px;
+         padding:28px;display:flex;flex-direction:column;text-decoration:none;color:inherit;
+         transition:transform .22s,border-color .22s,background .22s}
+.product:hover{transform:translateY(-4px);border-color:rgba(59,130,246,.4);background:var(--card-hover)}
+.product-top{display:flex;align-items:flex-start;justify-content:space-between;
+             gap:14px;margin-bottom:14px}
+.product-icon{font-size:2rem;line-height:1}
+.pill{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+      padding:4px 10px;border-radius:999px;white-space:nowrap}
+.pill-live{background:rgba(34,197,94,.16);color:#86efac;border:1px solid rgba(34,197,94,.32)}
+.pill-oss{background:rgba(167,139,250,.14);color:#c4b5fd;border:1px solid rgba(167,139,250,.32)}
+.product h3{font-size:1.25rem;font-weight:700;letter-spacing:-.02em}
+.product .tagline{color:var(--cyan);font-size:.88rem;font-weight:500;margin:2px 0 12px}
+.product p.desc{color:var(--muted);font-size:.92rem;flex:1}
+.product .stack{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted);
+                margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.product .go{margin-top:14px;font-size:.9rem;font-weight:600;color:var(--blue)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container nav-inner">
+    <a href="/hub" class="brand"><img src="/static/logo.svg" alt=""> Guard Infra</a>
+    <div class="nav-right">
+      <a href="/cloud-guard">Public site</a>
+      <form method="POST" action="/logout" style="display:inline">
+        <button type="submit" class="logout">Sign out</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <header>
+    <div class="kicker">Products</div>
+    <h1>What would you like to open?</h1>
+    <p>
+      Each product has its own page explaining what it does and how it works.
+      Read that first if you have not used it before — it is shorter than the
+      time you would spend guessing.
+    </p>
+  </header>
+
+  <div class="products">
+    {{range .Products}}
+    <a href="/hub/{{.Slug}}" class="product">
+      <div class="product-top">
+        <span class="product-icon">{{.Icon}}</span>
+        {{if .ActionExternal}}
+        <span class="pill pill-oss">Open source</span>
+        {{else}}
+        <span class="pill pill-live">&#9679; Live</span>
+        {{end}}
+      </div>
+      <h3>{{.Name}}</h3>
+      <div class="tagline">{{.Tagline}}</div>
+      <p class="desc">{{.Summary}}</p>
+      <div class="stack">{{.Stack}}</div>
+      <div class="go">Read the docs &rarr;</div>
+    </a>
+    {{end}}
+  </div>
+</div>
+
+</body>
+</html>

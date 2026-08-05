@@ -19,7 +19,7 @@ type authPageData struct {
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	// Already signed in - skip the form.
 	if _, _, ok := s.DB.LookupSession(auth.SessionToken(r)); ok {
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		http.Redirect(w, r, "/hub", http.StatusSeeOther)
 		return
 	}
 	data := authPageData{SignupsEnabled: auth.SignupsEnabled()}
@@ -65,7 +65,7 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	auth.SetSessionCookie(w, r, token)
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/hub", http.StatusSeeOther)
 }
 
 func (s *Server) handleSignupPage(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +74,7 @@ func (s *Server) handleSignupPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, _, ok := s.DB.LookupSession(auth.SessionToken(r)); ok {
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		http.Redirect(w, r, "/hub", http.StatusSeeOther)
 		return
 	}
 	s.renderTemplate(w, "signup.html", authPageData{SignupsEnabled: true})

@@ -431,7 +431,7 @@
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <a href="/cloud-guard" class="logo">
+        <a href="/hub" class="logo">
             <img src="/static/logo.svg" alt="" class="logo-icon">
             Cloud Guard
         </a>
@@ -440,6 +440,11 @@
              worth clicking. Sections with nothing in them are hidden entirely
              rather than leading to an empty page. -->
         <ul class="nav-list">
+            <!-- Every other item on this menu scrolls within the dashboard. This
+                 one leaves it, so it sits above the first group rather than
+                 hiding among anchors that behave differently. -->
+            <li class="nav-item"><a href="/hub">← All products</a></li>
+
             <li class="nav-group-label">Overview</li>
             <li class="nav-item active"><a href="#top" data-spy="top">📊 Summary</a></li>
 

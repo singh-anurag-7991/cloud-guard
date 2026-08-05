@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Name}} — documentation | Guard Infra</title>
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f; --bg-2:#0c1018; --card:#11161f;
+  --border:rgba(255,255,255,.08);
+  --text:#e8edf5; --muted:#8b97ab;
+  --blue:#3b82f6; --cyan:#22d3ee; --green:#22c55e; --amber:#f59e0b;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);
+     color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+.container{max-width:760px;margin:0 auto;padding:0 24px}
+a{color:inherit}
+
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(7,9,15,.72);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;
+           max-width:1120px;margin:0 auto;padding:0 24px}
+.brand{font-weight:700;font-size:1.05rem;letter-spacing:-.02em;text-decoration:none;
+       display:flex;gap:10px;align-items:center}
+.brand img{width:28px;height:28px;display:block}
+.nav-right{display:flex;gap:18px;align-items:center;font-size:.9rem;color:var(--muted)}
+.nav-right a{text-decoration:none;transition:color .2s}
+.nav-right a:hover{color:var(--text)}
+.logout{background:none;border:1px solid var(--border);color:var(--muted);
+        padding:7px 14px;border-radius:8px;font:inherit;font-size:.86rem;cursor:pointer}
+.logout:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
+.back{display:inline-block;margin:32px 0 0;color:var(--muted);text-decoration:none;font-size:.88rem}
+.back:hover{color:var(--text)}
+
+header{padding:24px 0 8px}
+.doc-icon{font-size:2.6rem;line-height:1;display:block;margin-bottom:12px}
+h1{font-size:clamp(1.9rem,4.4vw,2.5rem);font-weight:700;letter-spacing:-.03em;line-height:1.15}
+.tagline{color:var(--cyan);font-size:1.02rem;font-weight:500;margin-top:6px}
+.stack{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);
+       margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.summary{font-size:1.06rem;color:var(--text);margin:28px 0 8px}
+
+section{padding:34px 0 0}
+h2{font-size:1.22rem;font-weight:600;letter-spacing:-.02em;margin-bottom:12px}
+section p{color:var(--muted)}
+ul{list-style:none;margin-top:14px}
+li{color:var(--muted);position:relative;padding-left:22px;margin-bottom:10px}
+li::before{content:'';position:absolute;left:2px;top:.72em;width:6px;height:6px;
+           border-radius:50%;background:var(--blue);opacity:.75}
+
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.92rem}
+th{text-align:left;font-weight:600;font-size:.74rem;text-transform:uppercase;
+   letter-spacing:.08em;color:var(--muted);padding:0 12px 10px 0;
+   border-bottom:1px solid var(--border)}
+td{padding:12px 12px 12px 0;border-bottom:1px solid var(--border);
+   color:var(--muted);vertical-align:top}
+td.rule{color:var(--text);font-weight:500;white-space:nowrap}
+.tag{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+     padding:3px 8px;border-radius:999px;white-space:nowrap}
+.tag-priced{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3)}
+.tag-flag{background:rgba(139,151,171,.13);color:var(--muted);border:1px solid var(--border)}
+
+.caveat{margin-top:36px;padding:16px 18px;border-radius:10px;
+        background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.24);
+        color:#fcd34d;font-size:.92rem;line-height:1.6}
+
+.action{margin:34px 0 90px;padding-top:30px;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:10px;
+     font-weight:600;font-size:.96rem;text-decoration:none;
+     background:linear-gradient(135deg,var(--blue),#1d4ed8);color:#fff;
+     box-shadow:0 8px 24px rgba(59,130,246,.26);transition:transform .18s}
+.btn:hover{transform:translateY(-2px)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/hub" class="brand"><img src="/static/logo.svg" alt=""> Guard Infra</a>
+    <div class="nav-right">
+      <a href="/hub">All products</a>
+      <form method="POST" action="/logout" style="display:inline">
+        <button type="submit" class="logout">Sign out</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/hub" class="back">&larr; All products</a>
+
+  <header>
+    <span class="doc-icon">{{.Icon}}</span>
+    <h1>{{.Name}}</h1>
+    <div class="tagline">{{.Tagline}}</div>
+    <div class="stack">{{.Stack}}</div>
+  </header>
+
+  <p class="summary">{{.Summary}}</p>
+
+  {{range .Sections}}
+  <section>
+    <h2>{{.Heading}}</h2>
+    {{if .Body}}<p>{{.Body}}</p>{{end}}
+    {{if .Bullets}}
+    <ul>
+      {{range .Bullets}}<li>{{.}}</li>{{end}}
+    </ul>
+    {{end}}
+  </section>
+  {{end}}
+
+  {{if .Rules}}
+  <section>
+    <h2>Every check it runs</h2>
+    <p>
+      Four of these produce a monthly figure from AWS list prices. The rest flag
+      something worth looking at but carry no saving — a public bucket costs you
+      nothing until it costs you everything.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Check</th><th>What it looks for</th><th></th></tr>
+      </thead>
+      <tbody>
+        {{range .Rules}}
+        <tr>
+          <td class="rule">{{.Name}}</td>
+          <td>{{.What}}</td>
+          <td>{{if .Priced}}<span class="tag tag-priced">Priced</span>{{else}}<span class="tag tag-flag">Flag</span>{{end}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+  {{end}}
+
+  {{if .Caveat}}
+  <div class="caveat">{{.Caveat}}</div>
+  {{end}}
+
+  <div class="action">
+    <a href="{{.ActionURL}}" class="btn"{{if .ActionExternal}} target="_blank" rel="noopener"{{end}}>{{.ActionLabel}}</a>
+  </div>
+</div>
+
+</body>
+</html>
