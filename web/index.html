@@ -417,12 +417,22 @@
         .alert-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
         .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); color: var(--accent-red); }
     </style>
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<style>
+  /* The brand mark is an <img> now, not an emoji, so it needs an explicit box.
+     background/border-radius are reset because one page wrapped the old emoji
+     in a coloured tile that would clash with the mark's own gradient. */
+  .brand-icon, .logo-icon {
+    width: 30px; height: 30px; display: inline-block;
+    vertical-align: -0.34em; background: none; border-radius: 0; flex: none;
+  }
+</style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <a href="/" class="logo">
-            <div class="logo-icon">🛡️</div>
+        <a href="/cloud-guard" class="logo">
+            <img src="/static/logo.svg" alt="" class="logo-icon">
             Cloud Guard
         </a>
         <!-- Each item carries its own count. A menu that says "Findings" tells

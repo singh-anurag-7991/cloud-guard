@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guard Platform | Products</title>
+    <title>Guard Infra | Products</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -290,13 +290,25 @@
             .footer-grid { grid-template-columns: 1fr; }
         }
     </style>
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<style>
+  /* The brand mark is an <img> now, not an emoji, so it needs an explicit box.
+     background/border-radius are reset because one page wrapped the old emoji
+     in a coloured tile that would clash with the mark's own gradient. */
+  .brand-icon, .logo-icon {
+    width: 30px; height: 30px; display: inline-block;
+    vertical-align: -0.34em; background: none; border-radius: 0; flex: none;
+  }
+</style>
 </head>
 <body>
 
     <nav class="navbar" id="navbar">
-        <a href="/" class="brand"><div class="brand-icon">🛡️</div> Guard Platform</a>
+        <!-- Home for the platform is /cloud-guard. "/" is the personal
+             portfolio and is reachable only from the footer byline. -->
+        <a href="/cloud-guard" class="brand"><img src="/static/logo.svg" alt="" class="brand-icon"> Guard Infra</a>
         <ul class="nav-links">
-            <li><a href="/">Home</a></li>
+            <li><a href="/cloud-guard">Home</a></li>
             <li><a href="/products" class="active">Products</a></li>
             <li><a href="/about">About</a></li>
             <li><a href="/dashboard" class="btn-primary">Launch App →</a></li>
@@ -513,7 +525,7 @@ http.Handle("/api/", limiter.Middleware(apiHandler))
     <section class="cta-section">
         <div class="reveal">
             <h2 class="section-title">Ready to get started?</h2>
-            <p class="subtitle" style="margin: 1rem auto 2rem;">Join enterprises securing their cloud infrastructure with Guard Platform.</p>
+            <p class="subtitle" style="margin: 1rem auto 2rem;">Join enterprises securing their cloud infrastructure with Guard Infra.</p>
             <a href="/dashboard" class="btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;">Launch App →</a>
         </div>
     </section>
@@ -522,7 +534,7 @@ http.Handle("/api/", limiter.Middleware(apiHandler))
     <footer class="footer">
         <div class="footer-grid">
             <div class="footer-brand">
-                <strong>🛡️ Guard Platform</strong>
+                <strong><img src="/static/logo.svg" alt="" class="brand-icon"> Guard Infra</strong>
                 Enterprise cloud security and infrastructure optimization tools.
             </div>
             <div class="footer-links">
@@ -549,7 +561,7 @@ http.Handle("/api/", limiter.Middleware(apiHandler))
             </div>
         </div>
         <div class="footer-bottom">
-            © 2026 Guard Platform. Engineered by Anurag Singh.
+            © 2026 Guard Infra. Engineered by Anurag Singh.
         </div>
     </footer>
 

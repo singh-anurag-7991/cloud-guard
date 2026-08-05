@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="Guard Infra">
+  <!-- A shield wrapped around three stacked layers: the guard, and the
+       infrastructure it is guarding. Colours are baked in rather than using
+       currentColor because this file is loaded through <img>, which cannot
+       inherit the page's text colour. -->
+  <defs>
+    <linearGradient id="gi-stroke" x1="4" y1="2" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="gi-fill" x1="12" y1="13" x2="28" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M20 2.6 34.4 8.7v11.6c0 8.4-5.8 15.1-14.4 17.4C11.4 35.4 5.6 28.7 5.6 20.3V8.7L20 2.6Z"
+        fill="url(#gi-stroke)" fill-opacity=".10"
+        stroke="url(#gi-stroke)" stroke-width="2.4" stroke-linejoin="round"/>
+
+  <!-- Bars taper with the shield so the mark still reads at 16px. -->
+  <g fill="url(#gi-fill)">
+    <rect x="12.2" y="13.6" width="15.6" height="3.1" rx="1.55"/>
+    <rect x="13.4" y="19.1" width="13.2" height="3.1" rx="1.55" fill-opacity=".72"/>
+    <rect x="15.2" y="24.6" width="9.6" height="3.1" rx="1.55" fill-opacity=".45"/>
+  </g>
+</svg>
