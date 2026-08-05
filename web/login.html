@@ -43,7 +43,8 @@
     <a href="/cloud-guard" class="brand"><img src="/static/logo.svg" alt="" class="brand-icon"> Guard Infra</a>
     <div class="card">
       <h1>Sign in</h1>
-      <p class="sub">Access your Cloud Guard dashboard.</p>
+      <!-- Signing in now lands on the product hub, not inside Cloud Guard. -->
+      <p class="sub">Sign in to reach your products.</p>
 
       {{if .Error}}<div class="msg err">{{.Error}}</div>{{end}}
       {{if .Success}}<div class="msg ok">{{.Success}}</div>{{end}}
