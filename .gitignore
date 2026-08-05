@@ -18,6 +18,12 @@
 .idea/
 .vscode/
 
+# Personal working notes. These are for you, not for anyone reading the repo —
+# job search plans, interview prep, outreach drafts and client names have no
+# business being on a public GitHub page a recruiter or client might open.
+coach/
+freelance/
+
 # Local database
 data/
 *.db-wal
